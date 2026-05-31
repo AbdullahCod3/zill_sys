@@ -135,6 +135,41 @@ Operational data is in **Firestore** collections (`agents`, `customers`, `superv
 foreign keys). Knowledge content is in **Pinecone** as vectors + metadata. Full field definitions
 are in PRD §10 — consult it rather than guessing field names.
 
+## Project Structure (`lib/`)
+
+Folder skeleton only so far (`.gitkeep` placeholders); `main.dart` is still the starter app.
+
+```
+lib/
+├── main.dart                       # app entry (currently starter counter — to be rewired)
+├── core/
+│   ├── constants/                  # anger threshold (7), debounce window, top-K, endpoints
+│   ├── routes/                     # app_routes.dart — AppRoutes constants + onGenerateRoute
+│   ├── theme/                      # ThemeData, colors, RTL/LTR (Arabic + English)
+│   └── utils/                      # reusable functions (formatters, language helpers)
+├── models/                         # *Model classes (see Firestore Structure) + DTOs
+├── services/
+│   ├── audio/                      # AudioSource interface + SimulatedWebRtcSource (rule #1)
+│   ├── socket/                     # WebSocket client to Dart Frog (streaming + writes)
+│   └── firestore/                  # direct reads of reference data (customers, supervisors)
+├── cubits/
+│   ├── session_cubit/              # Get Answer / Stop, session lifecycle
+│   └── call_cubits/                # feature group (multiple cubits)
+│       ├── transcript_cubit/       # live diarized transcript
+│       ├── answer_cubit/           # suggested answer + citations
+│       └── escalation_cubit/       # anger alert + escalation dialog
+├── pages/
+│   └── call/                       # agent console page
+└── widgets/                        # reusable UI (buttons, panels, cards, dialogs)
+```
+
+- **`.gitkeep` placeholders are temporary**: when adding the first real file to a folder, delete
+  that folder's `.gitkeep` in the same change.
+- **Firestore access is hybrid**: client reads reference data directly (`customers`, `supervisors`);
+  all writes (`calls`, `escalations`) go through the backend over the WebSocket.
+- Naming matches the conventions above — `core/routes/` (not `router/`), `_cubits` suffix on
+  feature groups, snake_case folders.
+
 ## Demo scope
 
 The build target is a scripted ~3-minute demo (PRD §16). Explicitly **out of scope**: real

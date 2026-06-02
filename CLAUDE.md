@@ -41,8 +41,8 @@ package); when it is added, it will have its own `dart_frog dev` workflow and `p
 | Frontend        | Flutter Web                       | `flutter_webrtc` for audio capture + native WebSocket to the backend |
 | Backend         | Dart Frog                         | Thin relay + orchestrator; single language across client and server |
 | Streaming STT   | Deepgram                          | Low-latency streaming with built-in diarization; Arabic support (plain WebSocket) |
-| LLM             | OpenAI (GPT-4o-class)             | JSON/structured-output mode; one call returns answer + citations + anger + escalation (REST) |
-| Embeddings      | OpenAI `text-embedding-3-large`   | Multilingual (Arabic + English); **3072 dims — Pinecone index must match** |
+| LLM             | Gemini (`gemini-2.5-flash`)       | JSON/structured-output mode; one call returns answer + citations + anger + escalation (REST) |
+| Embeddings      | Pinecone hosted model (**TBD**)   | Pinecone-managed embedding model; specific model + index dimension not yet decided |
 | Vector DB       | Pinecone                          | Managed vector search for RAG retrieval (REST) |
 | Operational DB  | Firebase Firestore                | Holds `agents`, `customers`, `supervisors`, `calls`, `escalations` |
 
@@ -75,7 +75,7 @@ package); when it is added, it will have its own `dart_frog dev` workflow and `p
 
 ## Architecture (target, per PRD)
 
-Two-process system; the split exists for one reason — **API keys (Deepgram, OpenAI, Pinecone) and
+Two-process system; the split exists for one reason — **API keys (Deepgram, Gemini, Pinecone) and
 privileged Firestore access must never ship in the client.** The backend is a thin relay +
 orchestrator.
 
@@ -84,8 +84,8 @@ orchestrator.
 - **Dart Frog backend** — WebSocket/session manager that relays audio to Deepgram (streaming STT
   with diarization), buffers the transcript, runs the analysis cycle, and reads/writes Firestore.
 
-External services: **Deepgram** (streaming STT over WebSocket), **OpenAI** (LLM + embeddings, REST),
-**Pinecone** (vector search, REST), **Firebase Firestore** (operational data). None have official
+External services: **Deepgram** (streaming STT over WebSocket), **Gemini** (LLM, REST),
+**Pinecone** (embeddings + vector search, REST), **Firebase Firestore** (operational data). None have official
 Dart SDKs in this stack — all are called via plain WebSocket/REST.
 
 ### Firestore Structure
@@ -113,8 +113,8 @@ These are easy to violate and expensive to retrofit:
    deserialize `snake_case` → `camelCase` when reading Firestore/Pinecone metadata, serialize back
    when writing. No `snake_case` identifiers in Dart; no `camelCase` keys in storage.
 
-3. **One structured OpenAI call per analysis cycle.** Each cycle: embed the latest customer problem
-   text → Pinecone top-K (K≈5) retrieval → single OpenAI call (JSON mode) → parse. The model must
+3. **One structured Gemini call per analysis cycle.** Each cycle: embed the latest customer problem
+   text → Pinecone top-K (K≈5) retrieval → single Gemini call (JSON mode) → parse. The model must
    return *exactly* the JSON shape in PRD §11 (`language`, `problem_summary`, `suggested_answer`,
    `citations`, `anger_score`, `escalation_requested`, `confidence`) and nothing else.
 
@@ -122,8 +122,8 @@ These are easy to violate and expensive to retrofit:
    retrieval miss it must say so and set `confidence: low`. Citations come from the matched chunks'
    metadata (`title`, `document_id`).
 
-5. **Pinecone index dimension is 3072** to match `text-embedding-3-large`. The embedding model is
-   locked; changing it breaks retrieval.
+5. **Embedding model is a Pinecone hosted model — not yet chosen (TBD).** The Pinecone index
+   dimension must match the selected model; lock both together once decided — changing it breaks retrieval.
 
 6. **Anger alert fires once per crossing.** Threshold default 7 (a configurable constant). Track an
    `alertFired` flag per session — there is no persistent "anger meter," and the alert must not

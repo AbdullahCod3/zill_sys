@@ -27,6 +27,10 @@ flutter test test/foo_test.dart # run a single test file
 flutter test --name "pattern"   # run tests whose name matches a pattern
 ```
 
+```bash
+flutter build web                  # production build (passes)
+```
+
 There is currently no backend code. The PRD calls for a **Dart Frog** backend (a separate
 package); when it is added, it will have its own `dart_frog dev` workflow and `pubspec.yaml`.
 
@@ -137,38 +141,52 @@ are in PRD §10 — consult it rather than guessing field names.
 
 ## Project Structure (`lib/`)
 
-Folder skeleton only so far (`.gitkeep` placeholders); `main.dart` is still the starter app.
+Front-end demo is built and runs (`flutter run -d chrome`). Fully mocked — no backend yet.
 
 ```
 lib/
-├── main.dart                       # app entry (currently starter counter — to be rewired)
+├── main.dart                       # ZillApp: MultiBlocProvider (theme/locale/demo) + MaterialApp
 ├── core/
-│   ├── constants/                  # anger threshold (7), debounce window, top-K, endpoints
+│   ├── constants/                  # app_constants.dart — Slate tokens + anger threshold/debounce/top-K
+│   ├── localization/               # app_strings.dart — EN/AR {en,ar} pairs (UI chrome)
 │   ├── routes/                     # app_routes.dart — AppRoutes constants + onGenerateRoute
-│   ├── theme/                      # ThemeData, colors, RTL/LTR (Arabic + English)
-│   └── utils/                      # reusable functions (formatters, language helpers)
-├── models/                         # *Model classes (see Firestore Structure) + DTOs
+│   ├── theme/                      # app_colors (ThemeExtension), app_text_styles, app_theme (dark+light)
+│   └── utils/                      # lang_text (langText/TextPair), time_format, json_time
+├── models/                         # runtime (analysis_result, transcript_line, answer_option, citation,
+│                                   #   enums) + Firestore-shape (customer, agents, supervisor, calls, escalation)
 ├── services/
 │   ├── audio/                      # AudioSource interface + SimulatedWebRtcSource (rule #1)
-│   ├── socket/                     # WebSocket client to Dart Frog (streaming + writes)
-│   └── firestore/                  # direct reads of reference data (customers, supervisors)
+│   ├── demo/                       # demo_script_service (scripted content), mock_analysis_service (debounced)
+│   ├── socket/                     # (.gitkeep) future WebSocket client to Dart Frog
+│   └── firestore/                  # (.gitkeep) future reference-data reads
 ├── cubits/
-│   ├── session_cubit/              # Get Answer / Stop, session lifecycle
-│   └── call_cubits/                # feature group (multiple cubits)
-│       ├── transcript_cubit/       # live diarized transcript
-│       ├── answer_cubit/           # suggested answer + citations
-│       └── escalation_cubit/       # anger alert + escalation dialog
+│   ├── app_cubits/                 # theme_cubit, locale_cubit (EN/AR+RTL), demo_cubit (mood) — global
+│   ├── session_cubit/              # call lifecycle waiting→incoming→connected→ended + Get Answer
+│   ├── call_cubits/                # transcript_cubit, answer_cubit, escalation_cubit
+│   └── customer_cubit/             # customer phone lifecycle (no Shadow shown)
 ├── pages/
-│   └── call/                       # agent console page
-└── widgets/                        # reusable UI (buttons, panels, cards, dialogs)
+│   ├── home/                       # role chooser ("Choose a side.")
+│   ├── customer/                   # phone screen (idle→ringing→connected→ended)
+│   └── call/                       # agent console (cockpit)
+└── widgets/                        # reusable UI — app_bar/, common/, home/, customer/, call/, app_shell,
+                                    #   demo_controls_panel, background_stage
 ```
 
-- **`.gitkeep` placeholders are temporary**: when adding the first real file to a folder, delete
-  that folder's `.gitkeep` in the same change.
-- **Firestore access is hybrid**: client reads reference data directly (`customers`, `supervisors`);
-  all writes (`calls`, `escalations`) go through the backend over the WebSocket.
+- **Demo control**: `app_cubits/demo_cubit` mood (calm/frustrated) drives all scripted content via
+  `services/demo/`; surfaced through the floating `DemoControlsPanel` (the prototype's Tweaks panel).
+- **Suggested replies**: 3 tiered options (`AnswerTier` enum: recommended/likely/maybe). The cockpit's
+  "Don't use — re-read the call" button appends an angrier follow-up line and swaps in a second
+  suggestion set (`DemoScriptService.analysis(round:)`); rounds cycle. `AnswerLoaded` carries `round`.
+- **Design reference**: the source prototype lives in `docs/design_ref/` (HTML/CSS/JSX). The Zill skin
+  (`styles.css`) overrides Slate's serif with **Plus Jakarta Sans** for display+UI — fonts via
+  `google_fonts` (Plus Jakarta Sans / JetBrains Mono / Tajawal for AR). Assets in `assets/`.
+- **Stack added**: `flutter_bloc`, `equatable`, `google_fonts`, `flutter_svg`, `flutter_localizations`, `intl`.
+- **Firestore access is hybrid** (target): client reads reference data directly (`customers`, `supervisors`);
+  all writes (`calls`, `escalations`) go through the backend over the WebSocket. Currently all mocked.
 - Naming matches the conventions above — `core/routes/` (not `router/`), `_cubits` suffix on
   feature groups, snake_case folders.
+- Tests: `test/escalation_cubit_test.dart` (one-time fire, rule #6), `test/models_test.dart`
+  (snake_case⇄camelCase boundary), `test/widget_test.dart` (boots to Home).
 
 ## Demo scope
 

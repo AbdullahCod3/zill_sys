@@ -1,0 +1,261 @@
+/* ============================================================
+   ZILL · SHADOW — neon-futuristic skin over Slate tokens
+   ============================================================ */
+@import url('slate-tokens.css');
+
+/* —— Override: simple, eye-friendly typography across the whole app —— */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+:root {
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-ui: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  min-height: 100%;
+  width: 100%;
+}
+#root { min-height: 100vh; width: 100%; }
+
+body {
+  font-family: var(--font-ui);
+  color: var(--fg-primary);
+  background: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* —— Neon layer (dark) ————————————————————————————— */
+:root, [data-theme="dark"] {
+  --neon: #7C6FF7;
+  --neon-cyan: #5EEAD4;
+  --neon-amber: #FFB949;
+  --glow-neon: 0 0 24px rgba(124, 111, 247, 0.55), 0 0 64px rgba(124, 111, 247, 0.22);
+  --glow-soft: 0 0 12px rgba(124, 111, 247, 0.35);
+  --glow-cyan: 0 0 24px rgba(94, 234, 212, 0.45);
+  --grid-color: rgba(124, 111, 247, 0.06);
+  --grid-strong: rgba(124, 111, 247, 0.14);
+  --canvas-glow: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124, 111, 247, 0.18), transparent 70%),
+                 radial-gradient(ellipse 50% 40% at 80% 100%, rgba(94, 234, 212, 0.06), transparent 70%);
+}
+
+[data-theme="light"] {
+  --neon: #5A52D5;
+  --neon-cyan: #14B8A6;
+  --neon-amber: #D97706;
+  --glow-neon: 0 0 16px rgba(90, 82, 213, 0.18), 0 0 36px rgba(90, 82, 213, 0.1);
+  --glow-soft: 0 0 8px rgba(90, 82, 213, 0.12);
+  --glow-cyan: 0 0 12px rgba(20, 184, 166, 0.18);
+  --grid-color: rgba(28, 28, 39, 0.04);
+  --grid-strong: rgba(28, 28, 39, 0.08);
+  --canvas-glow: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124, 111, 247, 0.06), transparent 70%);
+}
+
+/* —— Background grid + glow on every screen ———————— */
+.bg-stage {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(var(--grid-color) 1px, transparent 1px) 0 0 / 64px 64px,
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px) 0 0 / 64px 64px,
+    var(--canvas-glow),
+    var(--bg-base);
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-stage::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 50%, transparent 0%, var(--bg-base) 90%);
+  pointer-events: none;
+}
+
+/* —— App shell ————————————————————————————————— */
+.shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* —— App bar ——————————————————————————————————— */
+.appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(180deg, var(--bg-base), transparent);
+  position: relative;
+  z-index: 5;
+}
+.appbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  user-select: none;
+}
+.brand-mark {
+  width: 32px; height: 32px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.brand-mark svg { width: 100%; height: 100%; filter: drop-shadow(var(--glow-soft)); }
+.brand-word {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--fg-primary);
+  direction: rtl;
+}
+.brand-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: var(--neon);
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border: 1px solid var(--neon);
+  border-radius: var(--radius-sm);
+  margin-left: 4px;
+  box-shadow: var(--glow-soft);
+}
+
+.appbar-meta {
+  display: flex; align-items: center; gap: 18px;
+}
+.meta-chunk {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--fg-tertiary);
+  text-transform: uppercase;
+}
+.meta-chunk .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--color-success);
+  box-shadow: 0 0 10px var(--color-success);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.lang-toggle, .theme-toggle, .role-back {
+  background: transparent;
+  border: 1px solid var(--border-default);
+  color: var(--fg-secondary);
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+.lang-toggle:hover, .theme-toggle:hover, .role-back:hover {
+  border-color: var(--neon);
+  color: var(--fg-primary);
+  box-shadow: var(--glow-soft);
+}
+
+/* —— Generic ———————————————————————————————————— */
+.body-stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+/* —— Buttons ——————————————————————————————————— */
+.btn {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--neon);
+  color: var(--color-white);
+  border-color: var(--neon);
+  box-shadow: var(--glow-soft);
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--glow-neon);
+  transform: translateY(-1px);
+}
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border-default);
+  color: var(--fg-primary);
+}
+.btn-ghost:hover {
+  border-color: var(--neon);
+  color: var(--neon);
+  box-shadow: var(--glow-soft);
+}
+.btn-danger {
+  background: var(--color-danger);
+  color: var(--color-white);
+  border-color: var(--color-danger);
+}
+.btn-danger:hover { background: #d63b3b; }
+.btn:active { transform: scale(0.97); }
+
+/* —— Audio bars (animated) ———————————————————————— */
+.bars { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; }
+.bars span {
+  width: 3px;
+  background: currentColor;
+  border-radius: 2px;
+  animation: bars 1s ease-in-out infinite;
+}
+.bars span:nth-child(1) { height: 30%; animation-delay: 0s; }
+.bars span:nth-child(2) { height: 70%; animation-delay: 0.1s; }
+.bars span:nth-child(3) { height: 50%; animation-delay: 0.2s; }
+.bars span:nth-child(4) { height: 90%; animation-delay: 0.3s; }
+.bars span:nth-child(5) { height: 40%; animation-delay: 0.15s; }
+@keyframes bars {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+.bars.idle span { animation-play-state: paused; transform: scaleY(0.4); }
+
+/* —— Label utilities ————————————————————————————— */
+.kbd, .tag-mono {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+
+/* hide scrollbars in inner panels for cinematic feel */
+.scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-default) transparent; }
+.scroll::-webkit-scrollbar { width: 6px; }
+.scroll::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 3px; }
+.scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* page enter */
+.page { animation: pageIn 400ms var(--ease-out); position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}

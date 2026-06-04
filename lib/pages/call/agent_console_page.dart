@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/constants/webrtc_config.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -18,6 +19,8 @@ import '../../services/audio/audio_source.dart';
 import '../../services/audio/simulated_webrtc_source.dart';
 import '../../services/demo/demo_script_service.dart';
 import '../../services/demo/mock_analysis_service.dart';
+import '../../services/socket/signaling_service.dart';
+import '../../services/webrtc/peer_call_service.dart';
 import '../../widgets/app_shell.dart';
 import '../../widgets/call/anger_alert_banner.dart';
 import '../../widgets/call/call_controls.dart';
@@ -25,6 +28,7 @@ import '../../widgets/call/call_summary_card.dart';
 import '../../widgets/call/escalation_dialog.dart';
 import '../../widgets/call/get_answer_button.dart';
 import '../../widgets/call/incoming_call_card.dart';
+import '../../widgets/call/remote_audio.dart';
 import '../../widgets/call/suggested_answer_card.dart';
 import '../../widgets/call/transcript_panel.dart';
 import '../../widgets/call/waveform.dart';
@@ -42,7 +46,16 @@ class AgentConsolePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => SessionCubit()..begin()),
+        BlocProvider(
+          create: (_) =>
+              (WebRtcConfig.useRealCall
+                    ? SessionCubit(
+                        signaling: SignalingService(),
+                        peer: PeerCallService(),
+                      )
+                    : SessionCubit())
+                ..begin(),
+        ),
         BlocProvider(create: (_) => TranscriptCubit()),
         BlocProvider(
           create: (_) => AnswerCubit(const MockAnalysisService(_script)),
@@ -468,6 +481,7 @@ class _CallView extends StatelessWidget {
       ),
       child: Column(
         children: [
+          RemoteAudio(renderer: context.read<SessionCubit>().remoteRenderer),
           const SizedBox(height: 8),
           Container(
             width: 120,

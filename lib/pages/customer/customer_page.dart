@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/constants/webrtc_config.dart';
 import '../../core/localization/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -9,7 +10,10 @@ import '../../core/utils/time_format.dart';
 import '../../cubits/app_cubits/demo_cubit/demo_cubit.dart';
 import '../../cubits/customer_cubit/customer_cubit.dart';
 import '../../models/enums.dart';
+import '../../services/socket/signaling_service.dart';
+import '../../services/webrtc/peer_call_service.dart';
 import '../../widgets/app_shell.dart';
+import '../../widgets/call/remote_audio.dart';
 import '../../widgets/common/glass_pill.dart';
 import '../../widgets/customer/call_action_button.dart';
 import '../../widgets/customer/call_avatar.dart';
@@ -23,7 +27,12 @@ class CustomerPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => CustomerCubit(),
+      create: (_) => WebRtcConfig.useRealCall
+          ? CustomerCubit(
+              signaling: SignalingService(),
+              peer: PeerCallService(),
+            )
+          : CustomerCubit(),
       child: AppShell(
         statusLabel: AppStrings.callInProgress,
         showSwitchRole: true,
@@ -178,6 +187,7 @@ class _CustomerBody extends StatelessWidget {
             : AppStrings.clear.resolve(context);
         return Column(
           children: [
+            RemoteAudio(renderer: cubit.remoteRenderer),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

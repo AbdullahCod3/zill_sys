@@ -1,0 +1,8 @@
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# Built Flutter web app is copied in at run time, not committed.
+public/*
+!public/.gitkeep

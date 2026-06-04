@@ -1,0 +1,17 @@
+name: zill_backend
+description: >-
+  Ẓill signaling relay (Dart Frog). Exchanges WebRTC offer/answer/ICE between the
+  two call peers and serves the built Flutter web app from public/. The start of
+  the real backend per CLAUDE.md — keys/Firestore/Deepgram come later.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  dart_frog: ^1.1.0
+  dart_frog_web_socket: ^1.0.3
+
+dev_dependencies:
+  test: ^1.24.0

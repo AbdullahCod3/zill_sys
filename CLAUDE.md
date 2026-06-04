@@ -31,8 +31,18 @@ flutter test --name "pattern"   # run tests whose name matches a pattern
 flutter build web                  # production build (passes)
 ```
 
-There is currently no backend code. The PRD calls for a **Dart Frog** backend (a separate
-package); when it is added, it will have its own `dart_frog dev` workflow and `pubspec.yaml`.
+```bash
+# Real two-way call (backend/ is the Dart Frog signaling relay + static host)
+dart pub global activate dart_frog_cli   # one-time
+flutter build web                        # then copy build/web/* into backend/public/
+dart_frog dev                            # from backend/ → http://localhost:8080 (app + /signal)
+cloudflared tunnel --url http://localhost:8080   # public HTTPS URL (mic needs HTTPS)
+```
+
+The **`backend/`** package (Dart Frog) is the start of the real backend: currently just a thin
+WebSocket signaling relay (`routes/signal.dart`) that exchanges WebRTC offer/answer/ICE between the
+two peers and serves the built web app from `public/`. See `backend/README.md`. Deepgram/Gemini/
+Pinecone/Firestore orchestration come later.
 
 ## Tech Stack (target, per PRD §9)
 
@@ -147,7 +157,8 @@ Front-end demo is built and runs (`flutter run -d chrome`). Fully mocked — no 
 lib/
 ├── main.dart                       # ZillApp: MultiBlocProvider (theme/locale/demo) + MaterialApp
 ├── core/
-│   ├── constants/                  # app_constants.dart — Slate tokens + anger threshold/debounce/top-K
+│   ├── constants/                  # app_constants.dart — Slate tokens + anger/debounce/top-K;
+│   │                               #   webrtc_config.dart — useRealCall flag, STUN, signalingUrl()
 │   ├── localization/               # app_strings.dart — EN/AR {en,ar} pairs (UI chrome)
 │   ├── routes/                     # app_routes.dart — AppRoutes constants + onGenerateRoute
 │   ├── theme/                      # app_colors (ThemeExtension), app_text_styles, app_theme (dark+light)
@@ -157,7 +168,8 @@ lib/
 ├── services/
 │   ├── audio/                      # AudioSource interface + SimulatedWebRtcSource (rule #1)
 │   ├── demo/                       # demo_script_service (scripted content), mock_analysis_service (debounced)
-│   ├── socket/                     # (.gitkeep) future WebSocket client to Dart Frog
+│   ├── socket/                     # signaling_service — WebSocket client to Dart Frog /signal
+│   ├── webrtc/                     # peer_call_service — real RTCPeerConnection (live voice)
 │   └── firestore/                  # (.gitkeep) future reference-data reads
 ├── cubits/
 │   ├── app_cubits/                 # theme_cubit, locale_cubit (EN/AR+RTL), demo_cubit (mood) — global
@@ -180,7 +192,13 @@ lib/
 - **Design reference**: the source prototype lives in `docs/design_ref/` (HTML/CSS/JSX). The Zill skin
   (`styles.css`) overrides Slate's serif with **Plus Jakarta Sans** for display+UI — fonts via
   `google_fonts` (Plus Jakarta Sans / JetBrains Mono / Tajawal for AR). Assets in `assets/`.
-- **Stack added**: `flutter_bloc`, `equatable`, `google_fonts`, `flutter_svg`, `flutter_localizations`, `intl`.
+- **Real call** (`WebRtcConfig.useRealCall`, default on): customer/agent browsers actually hear each
+  other over WebRTC. `CustomerCubit` = caller (offer), `SessionCubit` = callee (offer→ring→answer);
+  both inject `SignalingService` + `PeerCallService`, mount a hidden `RemoteAudio` (1×1 `RTCVideoView`).
+  Signaling events replace the demo timers; flag off restores the pure timer demo. **Only the voice is
+  real** — transcript/answers/anger stay scripted (`SimulatedWebRtcSource`). LAN-only, STUN, no TURN.
+- **Stack added**: `flutter_bloc`, `equatable`, `google_fonts`, `flutter_svg`, `flutter_localizations`,
+  `intl`, `flutter_webrtc`, `web_socket_channel`.
 - **Firestore access is hybrid** (target): client reads reference data directly (`customers`, `supervisors`);
   all writes (`calls`, `escalations`) go through the backend over the WebSocket. Currently all mocked.
 - Naming matches the conventions above — `core/routes/` (not `router/`), `_cubits` suffix on

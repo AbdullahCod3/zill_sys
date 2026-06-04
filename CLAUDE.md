@@ -5,13 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project overview
 
 **ظل (Ẓill)** — Arabic for *shadow* — is a real-time AI assistant that works silently beside a
-customer-service agent during a live call. When the agent presses **Get Answer** at call start, the
-system streams the call audio, transcribes both speakers with speaker separation (diarization),
-identifies the customer's problem, searches a seeded company knowledge base, and surfaces a grounded
-suggested answer with source citations. In parallel it watches the customer's text sentiment: if
-anger crosses a threshold or the customer explicitly asks for a manager, it raises a one-time alert
-and opens a one-tap escalation dialog naming the relevant supervisor. It is bilingual (Gulf Arabic
-and English), The full product specification
+customer-service agent during a live call. Transcription is **automatic from call connect**: the
+system streams the call audio and transcribes both speakers with speaker separation (diarization),
+streaming the live transcript to the agent. **Get Answer** is a *separate* trigger — pressing it
+identifies the customer's problem, searches a seeded company knowledge base, and surfaces **up to
+three ranked, source-cited suggested replies** (recommended / more likely / maybe). In parallel it
+watches the customer's text sentiment: if anger crosses a threshold or the customer explicitly asks
+for a manager, it raises a one-time alert and opens a one-tap escalation dialog naming the relevant
+supervisor. It is bilingual (Gulf Arabic and English). The full product specification
 lives in `docs/PRD.md` and is the source of truth; read it before making architectural decisions.
 
 
@@ -51,8 +52,8 @@ Pinecone/Firestore orchestration come later.
 | Frontend        | Flutter Web                       | `flutter_webrtc` for audio capture + native WebSocket to the backend |
 | Backend         | Dart Frog                         | Thin relay + orchestrator; single language across client and server |
 | Streaming STT   | Deepgram                          | Low-latency streaming with built-in diarization; Arabic support (plain WebSocket) |
-| LLM             | Gemini (`gemini-2.5-flash`)       | JSON/structured-output mode; one call returns answer + citations + anger + escalation (REST) |
-| Embeddings      | Pinecone hosted model (**TBD**)   | Pinecone-managed embedding model; specific model + index dimension not yet decided |
+| LLM             | Gemini 3.5 Flash                  | JSON/structured-output mode; **two-pass** cycle per Get Answer (problem extraction → ranked replies), REST. Gemini 3.1 Pro = higher-reasoning fallback |
+| Embeddings      | OpenAI `text-embedding-3-large`   | Multilingual AR+EN; 3072 dims — Pinecone index must match. Separate provider/key from the LLM (REST) |
 | Vector DB       | Pinecone                          | Managed vector search for RAG retrieval (REST) |
 | Operational DB  | Firebase Firestore                | Holds `agents`, `customers`, `supervisors`, `calls`, `escalations` |
 
@@ -85,18 +86,21 @@ Pinecone/Firestore orchestration come later.
 
 ## Architecture (target, per PRD)
 
-Two-process system; the split exists for one reason — **API keys (Deepgram, Gemini, Pinecone) and
-privileged Firestore access must never ship in the client.** The backend is a thin relay +
-orchestrator.
+Two-process system; the split exists for one reason — **API keys (Deepgram, Gemini, OpenAI,
+Pinecone) and privileged Firestore access must never ship in the client.** The backend is a thin
+relay + orchestrator.
 
 - **Flutter Web client** — WebRTC audio capture, a single WebSocket to the backend, and the agent
-  UI (live transcript, suggested answer + citations, anger alert, escalation dialog).
+  UI (live transcript, up to three suggested replies + citations, anger alert, escalation dialog).
+  Reads display-only data (`customers`, `supervisors`) directly from Firestore.
 - **Dart Frog backend** — WebSocket/session manager that relays audio to Deepgram (streaming STT
-  with diarization), buffers the transcript, runs the analysis cycle, and reads/writes Firestore.
+  with diarization), buffers the transcript, runs the two-pass analysis cycle, and **writes** what
+  it computes (`calls`, `escalations`) to Firestore.
 
 External services: **Deepgram** (streaming STT over WebSocket), **Gemini** (LLM, REST),
-**Pinecone** (embeddings + vector search, REST), **Firebase Firestore** (operational data). None have official
-Dart SDKs in this stack — all are called via plain WebSocket/REST.
+**OpenAI** (embeddings, REST), **Pinecone** (vector search, REST), **Firebase Firestore**
+(operational data). None have official Dart SDKs in this stack — all are called via plain
+WebSocket/REST.
 
 ### Firestore Structure
 
@@ -123,24 +127,35 @@ These are easy to violate and expensive to retrofit:
    deserialize `snake_case` → `camelCase` when reading Firestore/Pinecone metadata, serialize back
    when writing. No `snake_case` identifiers in Dart; no `camelCase` keys in storage.
 
-3. **One structured Gemini call per analysis cycle.** Each cycle: embed the latest customer problem
-   text → Pinecone top-K (K≈5) retrieval → single Gemini call (JSON mode) → parse. The model must
-   return *exactly* the JSON shape in PRD §11 (`language`, `problem_summary`, `suggested_answer`,
-   `citations`, `anger_score`, `escalation_requested`, `confidence`) and nothing else.
+3. **Two-pass Gemini cycle per Get Answer (Option B).** Each press: **Pass 1** reads the transcript
+   and returns *exactly* `{language, problem_summary, anger_score, escalation_requested}` → embed
+   `problem_summary` (not the raw transcript) with `text-embedding-3-large` → Pinecone top-K (K≈5)
+   retrieval → **Pass 2** reads the retrieved chunks and returns *exactly*
+   `{suggested_replies: [{label, answer, confidence, citations:[{document_id, title}]}]}`. Both
+   calls are JSON-only — no prose around the JSON. See PRD §11 for the full shapes.
 
-4. **Answers are grounded only in retrieved chunks.** Never let the model invent policy; on a
-   retrieval miss it must say so and set `confidence: low`. Citations come from the matched chunks'
-   metadata (`title`, `document_id`).
+4. **Answers are grounded only in retrieved chunks.** Never let the model invent policy. Return
+   **up to three** replies (most-to-least confident), each a distinct strategy with its own
+   `citations`; the agent-facing Sources strip is the union across replies. Never pad to three. On a
+   retrieval miss, return a single low-confidence (`maybe`) reply stating no reliable answer was
+   found and suggesting escalation. Citations come from the matched chunks' metadata
+   (`title`, `document_id`).
 
-5. **Embedding model is a Pinecone hosted model — not yet chosen (TBD).** The Pinecone index
-   dimension must match the selected model; lock both together once decided — changing it breaks retrieval.
+5. **Embedding model is OpenAI `text-embedding-3-large` (3072 dims).** A separate provider/key from
+   the LLM. The Pinecone index dimension must match (3072) — changing the model breaks retrieval.
+   Can be consolidated onto a Google embedding model later to drop the OpenAI dependency.
 
 6. **Anger alert fires once per crossing.** Threshold default 7 (a configurable constant). Track an
    `alertFired` flag per session — there is no persistent "anger meter," and the alert must not
    re-fire on every chunk.
 
-7. **`Get Answer` means "start listening now."** It is the call-start trigger; speech before the
-   press is not captured. Analysis is debounced to fire at most once every ~6–8s.
+7. **Transcription is automatic from call connect; `Get Answer` only requests answers.** The live
+   diarized transcript streams from the customer's first words — it does not wait for the button.
+   `Get Answer` runs the two-pass cycle on the transcript captured so far; pressing again
+   regenerates from the latest transcript. (Anger/escalation are evaluated per press; for truly
+   continuous alerts, Pass 1 can run periodically over the streaming transcript.) **Note:** the
+   mocked demo still replays the scripted transcript *after* Get Answer — a divergence from this
+   auto-transcription target, to be reconciled when the real pipeline lands.
 
 ### Data model
 

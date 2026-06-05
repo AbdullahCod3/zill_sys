@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -7,8 +8,16 @@ import 'core/theme/app_theme.dart';
 import 'cubits/app_cubits/demo_cubit/demo_cubit.dart';
 import 'cubits/app_cubits/locale_cubit/locale_cubit.dart';
 import 'cubits/app_cubits/theme_cubit/theme_cubit.dart';
+import 'firebase_options.dart';
 
-void main() => runApp(const ZillApp());
+Future<void> main() async {
+  // Firebase must be initialized before the app reads/writes Firestore.
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const ZillApp());
+}
 
 /// App root: registers the global app-level cubits (theme, locale, demo) and
 /// wires the Slate themes, localization, and routes.

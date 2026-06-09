@@ -10,6 +10,8 @@ import '../../core/utils/time_format.dart';
 import '../../cubits/app_cubits/demo_cubit/demo_cubit.dart';
 import '../../cubits/customer_cubit/customer_cubit.dart';
 import '../../models/enums.dart';
+import '../../services/audio/audio_source.dart';
+import '../../services/audio/deepgram_transcript_source.dart';
 import '../../services/socket/signaling_service.dart';
 import '../../services/webrtc/peer_call_service.dart';
 import '../../widgets/app_shell.dart';
@@ -17,6 +19,7 @@ import '../../widgets/call/remote_audio.dart';
 import '../../widgets/common/glass_pill.dart';
 import '../../widgets/customer/call_action_button.dart';
 import '../../widgets/customer/call_avatar.dart';
+import '../../widgets/customer/language_choice.dart';
 import '../../widgets/customer/phone_frame.dart';
 import '../../widgets/customer/round_call_button.dart';
 
@@ -42,47 +45,93 @@ class CustomerPage extends StatelessWidget {
   }
 }
 
-class _CustomerBody extends StatelessWidget {
+class _CustomerBody extends StatefulWidget {
   const _CustomerBody();
 
   @override
+  State<_CustomerBody> createState() => _CustomerBodyState();
+}
+
+class _CustomerBodyState extends State<_CustomerBody> {
+  // Streams the customer's mic to the backend so their speech is transcribed
+  // and routed to the agent (role=customer). No transcript is rendered here —
+  // the customer never sees Shadow (PRD §3).
+  AudioSource? _uplink;
+
+  /// Customer-chosen call language ('ar' | 'en'); picked before the call and
+  /// used for both sides' transcription (independent of the UI locale).
+  String _lang = 'ar';
+
+  Future<void> _startUplink() async {
+    if (!WebRtcConfig.useRealTranscription || _uplink != null) return;
+    final uplink = DeepgramTranscriptSource(
+      role: 'customer',
+      lang: context.read<CustomerCubit>().callLang,
+      consumeTranscript: false,
+    );
+    _uplink = uplink;
+    await uplink.start();
+  }
+
+  void _stopUplink() {
+    _uplink?.dispose();
+    _uplink = null;
+  }
+
+  @override
+  void dispose() {
+    _uplink?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          Center(
-            child: PhoneFrame(
-              child: BlocBuilder<CustomerCubit, CustomerState>(
-                builder: (context, state) => _phoneContent(context, state),
+    return BlocListener<CustomerCubit, CustomerState>(
+      listenWhen: (prev, curr) => curr.runtimeType != prev.runtimeType,
+      listener: (context, state) {
+        if (state is CustomerConnected) {
+          _startUplink();
+        } else if (state is CustomerEnded || state is CustomerIdle) {
+          _stopUplink();
+        }
+      },
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Center(
+              child: PhoneFrame(
+                child: BlocBuilder<CustomerCubit, CustomerState>(
+                  builder: (context, state) => _phoneContent(context, state),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 32),
-          GlassPill(
-            dashedBorder: true,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            children: [
-              Text(
-                'NOTE',
-                style: AppTextStyles.mono(
-                  size: 10,
-                  color: AppColors.neonCyan,
-                  letterSpacing: 1.5,
+            const SizedBox(height: 32),
+            GlassPill(
+              dashedBorder: true,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              children: [
+                Text(
+                  'NOTE',
+                  style: AppTextStyles.mono(
+                    size: 10,
+                    color: AppColors.neonCyan,
+                    letterSpacing: 1.5,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                AppStrings.customerNoShadow.resolve(context),
-                style: AppTextStyles.ui(
-                  arabic: isArabic(context),
-                  size: 13,
-                  color: context.colors.fgSecondary,
+                const SizedBox(width: 12),
+                Text(
+                  AppStrings.customerNoShadow.resolve(context),
+                  style: AppTextStyles.ui(
+                    arabic: isArabic(context),
+                    size: 13,
+                    color: context.colors.fgSecondary,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -136,11 +185,25 @@ class _CustomerBody extends StatelessWidget {
               ),
             ),
             const Spacer(),
+            Text(
+              AppStrings.callLanguage.resolve(context).toUpperCase(),
+              style: AppTextStyles.mono(
+                size: 10,
+                color: Colors.white54,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 10),
+            LanguageChoice(
+              value: _lang,
+              onChanged: (v) => setState(() => _lang = v),
+            ),
+            const SizedBox(height: 20),
             RoundCallButton(
               color: AppColors.success,
               icon: Icons.call,
               size: 76,
-              onTap: cubit.startCall,
+              onTap: () => cubit.startCall(lang: _lang),
             ),
             const SizedBox(height: 12),
             Text(

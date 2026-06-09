@@ -16,6 +16,7 @@ import '../../models/calls_model.dart';
 import '../../models/citation.dart';
 import '../../models/supervisor_model.dart';
 import '../../services/audio/audio_source.dart';
+import '../../services/audio/deepgram_transcript_source.dart';
 import '../../services/audio/simulated_webrtc_source.dart';
 import '../../services/demo/demo_script_service.dart';
 import '../../services/demo/mock_analysis_service.dart';
@@ -34,6 +35,7 @@ import '../../widgets/call/transcript_panel.dart';
 import '../../widgets/call/waveform.dart';
 import '../../widgets/common/audio_bars.dart';
 import '../../widgets/common/live_dot.dart';
+import '../../widgets/common/pill_button.dart';
 
 /// The agent cockpit (PRD §5/§6). Coordinates the session, transcript, answer,
 /// and escalation cubits around the Get-Answer flow.
@@ -81,6 +83,7 @@ class _ConsoleBody extends StatefulWidget {
 class _ConsoleBodyState extends State<_ConsoleBody> {
   static const _script = DemoScriptService();
   AudioSource? _source;
+  bool _transcriptionStarted = false;
 
   String get _customerName => langText(context, 'Layla Hassan', 'ليلى حسن');
 
@@ -94,21 +97,26 @@ class _ConsoleBodyState extends State<_ConsoleBody> {
     super.dispose();
   }
 
-  Future<void> _onGetAnswer() async {
+  /// Transcription is automatic from call connect (PRD §6): create the audio
+  /// source, bind the transcript, and begin streaming. Get Answer no longer
+  /// starts this — it only requests answers.
+  Future<void> _startTranscription() async {
+    if (_transcriptionStarted) return;
+    _transcriptionStarted = true;
     final mood = _demo.state;
     final ar = _arabic;
     // Capture cubits before any async gap (avoids using context across awaits).
     final transcriptCubit = context.read<TranscriptCubit>();
     final sessionCubit = context.read<SessionCubit>();
-    final answerCubit = context.read<AnswerCubit>();
 
     await _source?.dispose();
-    _source = SimulatedWebRtcSource(_script.script(mood, ar));
+    _source = WebRtcConfig.useRealTranscription
+        ? DeepgramTranscriptSource(role: 'agent', lang: sessionCubit.callLang)
+        : SimulatedWebRtcSource(_script.script(mood, ar));
     transcriptCubit.bind(_source!);
     await _source!.start();
 
     sessionCubit.markListening();
-    answerCubit.fetch(mood: mood, arabic: ar);
   }
 
   void _onEnd() {
@@ -142,6 +150,7 @@ class _ConsoleBodyState extends State<_ConsoleBody> {
   void _onNewCall() {
     _source?.dispose();
     _source = null;
+    _transcriptionStarted = false;
     context.read<TranscriptCubit>().clear();
     context.read<AnswerCubit>().reset();
     context.read<EscalationCubit>().reset();
@@ -164,6 +173,13 @@ class _ConsoleBodyState extends State<_ConsoleBody> {
     // when the alert fires (PRD §5/§13).
     return MultiBlocListener(
       listeners: [
+        // Transcription starts automatically the first time the call connects
+        // (PRD §6); Get Answer is a separate trigger handled in _AnswerArea.
+        BlocListener<SessionCubit, SessionState>(
+          listenWhen: (prev, curr) =>
+              curr is SessionConnected && prev is! SessionConnected,
+          listener: (_, _) => _startTranscription(),
+        ),
         BlocListener<AnswerCubit, AnswerState>(
           listener: (context, state) {
             if (state is AnswerLoaded) {
@@ -193,7 +209,6 @@ class _ConsoleBodyState extends State<_ConsoleBody> {
           SessionConnected() => _Connected(
             session: state,
             customerName: _customerName,
-            onGetAnswer: _onGetAnswer,
             onEnd: _onEnd,
             onEscalate: () =>
                 _openEscalationDialog(_script.supervisor(_arabic)),
@@ -255,6 +270,17 @@ class _Waiting extends StatelessWidget {
               color: colors.fgSecondary,
             ),
           ),
+          const SizedBox(height: 28),
+          // Demo shortcut: jump into the in-call console without a real peer.
+          PillButton(
+            label: langText(context, 'Simulate call', 'محاكاة مكالمة'),
+            leading: const Icon(
+              Icons.play_circle_outline,
+              size: 14,
+              color: AppColors.neon,
+            ),
+            onTap: () => context.read<SessionCubit>().simulateCall(),
+          ),
         ],
       ),
     );
@@ -294,14 +320,12 @@ class _Incoming extends StatelessWidget {
 class _Connected extends StatelessWidget {
   final SessionConnected session;
   final String customerName;
-  final Future<void> Function() onGetAnswer;
   final VoidCallback onEnd;
   final VoidCallback onEscalate;
 
   const _Connected({
     required this.session,
     required this.customerName,
-    required this.onGetAnswer,
     required this.onEnd,
     required this.onEscalate,
   });
@@ -323,11 +347,7 @@ class _Connected extends StatelessWidget {
                   session: session,
                   onEnd: onEnd,
                 );
-                final shadowPanel = _ShadowPanel(
-                  listening: session.listening,
-                  onGetAnswer: onGetAnswer,
-                  onEscalate: onEscalate,
-                );
+                final shadowPanel = _ShadowPanel(onEscalate: onEscalate);
                 if (constraints.maxWidth < 1100) {
                   return SingleChildScrollView(
                     child: Column(
@@ -543,15 +563,9 @@ class _CallView extends StatelessWidget {
 }
 
 class _ShadowPanel extends StatelessWidget {
-  final bool listening;
-  final Future<void> Function() onGetAnswer;
   final VoidCallback onEscalate;
 
-  const _ShadowPanel({
-    required this.listening,
-    required this.onGetAnswer,
-    required this.onEscalate,
-  });
+  const _ShadowPanel({required this.onEscalate});
 
   @override
   Widget build(BuildContext context) {
@@ -563,15 +577,15 @@ class _ShadowPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colors.borderDefault),
       ),
-      child: listening
-          ? _LiveAssist(onEscalate: onEscalate)
-          : _Empty(onGetAnswer: onGetAnswer),
+      // The live transcript shows from connect; only the answer pane is gated
+      // behind Get Answer (handled inside _AnswerArea).
+      child: _LiveAssist(onEscalate: onEscalate),
     );
   }
 }
 
 class _Empty extends StatelessWidget {
-  final Future<void> Function() onGetAnswer;
+  final VoidCallback onGetAnswer;
 
   const _Empty({required this.onGetAnswer});
 
@@ -702,6 +716,13 @@ class _LiveAssist extends StatelessWidget {
 class _AnswerArea extends StatelessWidget {
   static const _script = DemoScriptService();
 
+  /// Get Answer: run the analysis cycle on the transcript captured so far.
+  void _getAnswer(BuildContext context) {
+    final ar = isArabic(context);
+    final mood = context.read<DemoCubit>().state;
+    context.read<AnswerCubit>().fetch(mood: mood, arabic: ar);
+  }
+
   /// "Don't use — re-read": append the angrier follow-up line, then re-analyse.
   void _reRead(BuildContext context) {
     final ar = isArabic(context);
@@ -716,6 +737,7 @@ class _AnswerArea extends StatelessWidget {
       builder: (context, state) {
         switch (state) {
           case AnswerInitial():
+            return _Empty(onGetAnswer: () => _getAnswer(context));
           case AnswerLoading():
             return _Thinking();
           case AnswerError(:final message):

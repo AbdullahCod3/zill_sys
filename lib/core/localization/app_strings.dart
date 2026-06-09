@@ -33,6 +33,7 @@ class AppStrings {
     'اضغط لبدء مكالمة الدعم',
   );
   static const call = TextPair('Call', 'اتصال');
+  static const callLanguage = TextPair('Call language', 'لغة المكالمة');
   static const calling = TextPair('CALLING…', 'يتّصل…');
   static const ringing = TextPair('Ringing', 'يرنّ');
   static const support = TextPair('SUPPORT', 'الدعم');

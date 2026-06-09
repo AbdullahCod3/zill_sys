@@ -31,6 +31,12 @@ class SessionCubit extends Cubit<SessionState> {
   bool _signalingConnected = false;
   String? _pendingOfferSdp;
 
+  /// Call language ('ar' | 'en'), chosen by the customer and carried on the
+  /// offer. Drives the agent's Deepgram stream so both sides transcribe in the
+  /// same language — independent of the agent's UI locale.
+  String _callLang = 'en';
+  String get callLang => _callLang;
+
   Timer? _incomingTimer;
   Timer? _tickTimer;
 
@@ -67,8 +73,9 @@ class SessionCubit extends Cubit<SessionState> {
   Future<void> _onSignal(Map<String, dynamic> msg) async {
     switch (msg['type']) {
       case 'offer':
-        // Customer is calling — ring.
+        // Customer is calling — ring. Capture the customer-chosen call language.
         _pendingOfferSdp = msg['sdp'] as String;
+        _callLang = msg['lang'] as String? ?? _callLang;
         if (state is! SessionConnected) emit(const SessionIncoming());
       case 'ice':
         await _peer!.addRemoteIceCandidate(
@@ -104,6 +111,15 @@ class SessionCubit extends Cubit<SessionState> {
     begin();
   }
 
+  /// Demo shortcut: jump straight into a connected call with no real peer, so
+  /// the in-call console can be reached without the customer browser. Works in
+  /// both real-call and timer modes (ignores signaling/peer).
+  void simulateCall() {
+    _incomingTimer?.cancel();
+    emit(const SessionConnected());
+    _startTicking();
+  }
+
   /// Get Answer pressed — capture starts now (PRD §6).
   void markListening() {
     final s = state;
@@ -113,7 +129,9 @@ class SessionCubit extends Cubit<SessionState> {
   void toggleMute() {
     final s = state;
     if (s is SessionConnected) {
-      _peer?.setMicEnabled(s.muted); // currently muted → re-enable, & vice versa
+      _peer?.setMicEnabled(
+        s.muted,
+      ); // currently muted → re-enable, & vice versa
       emit(s.copyWith(muted: !s.muted));
     }
   }

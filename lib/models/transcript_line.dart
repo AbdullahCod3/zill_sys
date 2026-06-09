@@ -11,11 +11,16 @@ class TranscriptLine extends Equatable {
   final String language;
   final DateTime at;
 
+  /// `false` while this turn is a live (interim) hypothesis still being spoken;
+  /// `true` once committed. Only final turns are persisted to `calls.transcript`.
+  final bool isFinal;
+
   const TranscriptLine({
     required this.speaker,
     required this.text,
     required this.language,
     required this.at,
+    this.isFinal = true,
   });
 
   /// Stored shape for `calls.transcript` turn maps (PRD §10).
@@ -31,8 +36,9 @@ class TranscriptLine extends Equatable {
     text: json['text'] as String? ?? '',
     language: json['lang'] as String? ?? 'en',
     at: DateTime.tryParse(json['at'] as String? ?? '') ?? DateTime.now(),
+    isFinal: json['final'] as bool? ?? true,
   );
 
   @override
-  List<Object?> get props => [speaker, text, language, at];
+  List<Object?> get props => [speaker, text, language, at, isFinal];
 }

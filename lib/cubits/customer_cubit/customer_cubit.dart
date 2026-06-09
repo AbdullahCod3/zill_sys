@@ -30,13 +30,20 @@ class CustomerCubit extends Cubit<CustomerState> {
   Timer? _ringTimer;
   Timer? _tickTimer;
 
+  /// Call language ('ar' | 'en'), chosen by the customer before the call. This
+  /// becomes the transcription language for **both** sides (sent to the agent on
+  /// the offer) — independent of either browser's UI locale.
+  String _callLang = 'ar';
+  String get callLang => _callLang;
+
   bool get _real => _signaling != null && _peer != null;
 
   /// Remote-audio renderer for the page to mount (null in demo mode).
   RTCVideoRenderer? get remoteRenderer => _peer?.remoteRenderer;
 
-  /// Customer taps "Call".
-  Future<void> startCall() async {
+  /// Customer taps "Call". [lang] is the customer-chosen call language.
+  Future<void> startCall({String lang = 'ar'}) async {
+    _callLang = lang;
     if (!_real) return _startCallMock();
 
     final peer = _peer!;
@@ -60,9 +67,14 @@ class CustomerCubit extends Cubit<CustomerState> {
   Future<void> _onSignal(Map<String, dynamic> msg) async {
     switch (msg['type']) {
       case 'peer-ready':
-        // Agent is present — send the offer.
+        // Agent is present — send the offer, carrying the chosen call language
+        // so the agent transcribes in the same language.
         final offer = await _peer!.createOffer();
-        _signaling!.send({'type': 'offer', 'sdp': offer.sdp});
+        _signaling!.send({
+          'type': 'offer',
+          'sdp': offer.sdp,
+          'lang': _callLang,
+        });
       case 'answer':
         // Agent answered → connected.
         await _peer!.setRemoteDescription(msg['sdp'] as String, 'answer');
@@ -93,7 +105,9 @@ class CustomerCubit extends Cubit<CustomerState> {
   void toggleMute() {
     final s = state;
     if (s is CustomerConnected) {
-      _peer?.setMicEnabled(s.muted); // currently muted → re-enable, and vice versa
+      _peer?.setMicEnabled(
+        s.muted,
+      ); // currently muted → re-enable, and vice versa
       emit(s.copyWith(muted: !s.muted));
     }
   }

@@ -35,15 +35,25 @@ flutter build web                  # production build (passes)
 ```bash
 # Real two-way call (backend/ is the Dart Frog signaling relay + static host)
 dart pub global activate dart_frog_cli   # one-time
-flutter build web                        # then copy build/web/* into backend/public/
-dart_frog dev                            # from backend/ → http://localhost:8080 (app + /signal)
+./tool/deploy_web.ps1                     # flutter build web + copy build/web/* → backend/public/
+                                          #   (the tunnel serves this snapshot, NOT live source —
+                                          #    re-run after any client change, then hard-reload)
+$env:DEEPGRAM_API_KEY="<key>"; dart_frog dev   # from backend/ → :8080 (app + /signal + /transcribe)
 cloudflared tunnel --url http://localhost:8080   # public HTTPS URL (mic needs HTTPS)
 ```
 
-The **`backend/`** package (Dart Frog) is the start of the real backend: currently just a thin
-WebSocket signaling relay (`routes/signal.dart`) that exchanges WebRTC offer/answer/ICE between the
-two peers and serves the built web app from `public/`. See `backend/README.md`. Deepgram/Gemini/
-Pinecone/Firestore orchestration come later.
+The **`backend/`** package (Dart Frog) is the start of the real backend:
+- `routes/signal.dart` — thin WebSocket signaling relay (WebRTC offer/answer/ICE) + serves `public/`.
+- `routes/transcribe.dart` — **Deepgram streaming STT relay** (`/transcribe?room=&role=&lang=&sr=`).
+  Per-browser, role-based: each browser streams its own mic PCM; the route opens an outbound Deepgram
+  socket per client (`nova-3`, `linear16`), tags transcripts with the connection's `role` (the speaker
+  label — no `diarize`), and forwards them to the room's **agent** socket. Key from
+  `DEEPGRAM_API_KEY` env (never shipped to client). KeepAlive every 8s; `CloseStream` on disconnect.
+  Uses `interim_results=true` + `utterance_end_ms`: accumulates a per-connection utterance buffer and
+  emits live partials (`final:false`) as the user speaks, committing one bubble per utterance
+  (`final:true`) on `speech_final`/`UtteranceEnd` — so a sentence streams live and never fragments.
+
+See `backend/README.md`. Gemini/Pinecone/Firestore orchestration come later.
 
 ## Tech Stack (target, per PRD §9)
 
@@ -153,9 +163,10 @@ These are easy to violate and expensive to retrofit:
    diarized transcript streams from the customer's first words — it does not wait for the button.
    `Get Answer` runs the two-pass cycle on the transcript captured so far; pressing again
    regenerates from the latest transcript. (Anger/escalation are evaluated per press; for truly
-   continuous alerts, Pass 1 can run periodically over the streaming transcript.) **Note:** the
-   mocked demo still replays the scripted transcript *after* Get Answer — a divergence from this
-   auto-transcription target, to be reconciled when the real pipeline lands.
+   continuous alerts, Pass 1 can run periodically over the streaming transcript.) The mocked demo
+   now streams the scripted transcript **from call connect** (`_startTranscription` fires on the
+   first `SessionConnected`); Get Answer only requests answers — matching the auto-transcription
+   target, ready for the real Deepgram stream.
 
 ### Data model
 
@@ -181,7 +192,9 @@ lib/
 ├── models/                         # runtime (analysis_result, transcript_line, answer_option, citation,
 │                                   #   enums) + Firestore-shape (customer, agents, supervisor, calls, escalation)
 ├── services/
-│   ├── audio/                      # AudioSource interface + SimulatedWebRtcSource (rule #1)
+│   ├── audio/                      # AudioSource interface + SimulatedWebRtcSource (rule #1);
+│   │                               #   DeepgramTranscriptSource (real STT) + pcm_capture (web-only
+│   │                               #   Web Audio mic→PCM, conditional-export stub/web)
 │   ├── demo/                       # demo_script_service (scripted content), mock_analysis_service (debounced)
 │   ├── socket/                     # signaling_service — WebSocket client to Dart Frog /signal
 │   ├── webrtc/                     # peer_call_service — real RTCPeerConnection (live voice)
@@ -210,8 +223,19 @@ lib/
 - **Real call** (`WebRtcConfig.useRealCall`, default on): customer/agent browsers actually hear each
   other over WebRTC. `CustomerCubit` = caller (offer), `SessionCubit` = callee (offer→ring→answer);
   both inject `SignalingService` + `PeerCallService`, mount a hidden `RemoteAudio` (1×1 `RTCVideoView`).
-  Signaling events replace the demo timers; flag off restores the pure timer demo. **Only the voice is
-  real** — transcript/answers/anger stay scripted (`SimulatedWebRtcSource`). LAN-only, STUN, no TURN.
+  Signaling events replace the demo timers; flag off restores the pure timer demo. LAN-only, STUN, no TURN.
+- **Real transcription** (`WebRtcConfig.useRealTranscription`, default **off**): when on, the agent's
+  `_startTranscription` uses `DeepgramTranscriptSource` (role `agent`) instead of the scripted source,
+  and the customer page uplinks its mic (role `customer`, no UI). Both stream PCM to `/transcribe`;
+  the agent renders the merged diarized transcript from connect. Flag off → scripted demo. Answers/
+  anger stay scripted (`MockAnalysisService`). Needs a real call + HTTPS (mic) + `DEEPGRAM_API_KEY`.
+- **Call language is customer-chosen** (Nova-3 streaming has no AR/EN auto-detect): the customer picks
+  Arabic/English on the idle phone screen (`LanguageChoice` widget) **before** calling; `CustomerCubit`
+  stores it as `callLang` and sends it on the WebRTC `offer`. `SessionCubit` captures it (`callLang`)
+  and the agent transcribes in that language too — **independent of either browser's UI locale**. Both
+  `DeepgramTranscriptSource`s use this `callLang`. `TranscriptLine.isFinal` (default `true`) distinguishes
+  live partials from committed turns; `TranscriptCubit` upserts the live line per speaker and appends on
+  final (only finals feed `customerText`/Firestore).
 - **Stack added**: `flutter_bloc`, `equatable`, `google_fonts`, `flutter_svg`, `flutter_localizations`,
   `intl`, `flutter_webrtc`, `web_socket_channel`.
 - **Firestore access is hybrid** (target): client reads reference data directly (`customers`, `supervisors`);

@@ -12,6 +12,9 @@ environment:
 dependencies:
   dart_frog: ^1.1.0
   dart_frog_web_socket: ^1.0.3
+  # Outbound WebSocket to Deepgram (IOWebSocketChannel wraps a dart:io socket so
+  # the Authorization header can be set on the handshake).
+  web_socket_channel: ^3.0.0
 
 dev_dependencies:
   test: ^1.24.0

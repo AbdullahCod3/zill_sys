@@ -23,8 +23,8 @@ class SessionIncoming extends SessionState {
   const SessionIncoming();
 }
 
-/// Call is live. [listening] flips true once the agent presses Get Answer
-/// (PRD §6 — capture starts on the press).
+/// Call is live. [listening] flips true when capture starts at connect —
+/// transcription is automatic from call connect (PRD §6).
 class SessionConnected extends SessionState {
   final int seconds;
   final bool muted;

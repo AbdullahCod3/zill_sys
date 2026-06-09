@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
 
 
+import '../routes/transcribe.dart' as transcribe;
 import '../routes/signal.dart' as signal;
 import '../routes/index.dart' as index;
 
@@ -31,7 +32,7 @@ Handler buildRootHandler() {
 Handler buildHandler() {
   final pipeline = const Pipeline();
   final router = Router()
-    ..all('/signal', (context) => signal.onRequest(context,))..all('/', (context) => index.onRequest(context,));
+    ..all('/signal', (context) => signal.onRequest(context,))..all('/transcribe', (context) => transcribe.onRequest(context,))..all('/', (context) => index.onRequest(context,));
   return pipeline.addHandler(router);
 }
 

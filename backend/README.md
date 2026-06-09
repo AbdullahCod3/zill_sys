@@ -5,12 +5,38 @@ and agent browsers exchange WebRTC offer/answer/ICE, and serves the built Flutte
 web app. The actual voice connects **peer-to-peer** over your LAN — this server
 only carries the page download + signaling.
 
+Beyond signaling, the relay also hosts **`/transcribe`** — a per-browser Deepgram
+streaming STT relay. Each browser streams its own mic (linear16 PCM) to
+`/transcribe?room=…&role=agent|customer&lang=ar|en&sr=48000`; the server opens an
+outbound Deepgram socket per client, tags transcripts with that connection's role
+(the speaker label), and forwards them to the room's agent socket. Keys stay
+server-side.
+
 ## One-time setup
 
 ```bash
 dart pub global activate dart_frog_cli   # installs the `dart_frog` command
 dart pub get
 ```
+
+### Deepgram key (required for `/transcribe`)
+
+The transcription route reads the key from the `DEEPGRAM_API_KEY` environment
+variable — it is never sent to the browser. Get a key from
+<https://console.deepgram.com> → **API Keys**, then set it before starting:
+
+```powershell
+# PowerShell (from backend/)
+$env:DEEPGRAM_API_KEY="<your-key>"; dart_frog dev
+```
+
+```bash
+# bash
+DEEPGRAM_API_KEY="<your-key>" dart_frog dev
+```
+
+The client only uses real transcription when `WebRtcConfig.useRealTranscription`
+is `true` (default off — the scripted demo needs no key).
 
 ## Run the real call (two computers on the same WiFi)
 

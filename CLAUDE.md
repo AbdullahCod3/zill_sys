@@ -237,7 +237,11 @@ lib/
   live partials from committed turns; `TranscriptCubit` upserts the live line per speaker and appends on
   final (only finals feed `customerText`/Firestore).
 - **Stack added**: `flutter_bloc`, `equatable`, `google_fonts`, `flutter_svg`, `flutter_localizations`,
-  `intl`, `flutter_webrtc`, `web_socket_channel`.
+  `intl`, `flutter_webrtc`, `web_socket_channel`, `firebase_core`, `cloud_firestore`.
+- **Firebase initialized**: `lib/firebase_options.dart` (flutterfire-generated, project `zill-ed319`,
+  all platforms); `main()` is async and calls `Firebase.initializeApp` before `runApp`. Web SDK is
+  bundled via the Dart packages — no `<script>` tags in `web/index.html`. No Firestore reads/writes
+  wired yet (services + seeding are next M0/M1 items).
 - **Firestore access is hybrid** (target): client reads reference data directly (`customers`, `supervisors`);
   all writes (`calls`, `escalations`) go through the backend over the WebSocket. Currently all mocked.
 - Naming matches the conventions above — `core/routes/` (not `router/`), `_cubits` suffix on

@@ -56,16 +56,13 @@ dependencies:
   flutter_webrtc: ^0.12.0
   web_socket_channel: ^3.0.0
 
-<<<<<<< HEAD
   # Web Audio API access (dart:js_interop) for capturing mic PCM to stream to
   # the Deepgram relay. Web-only; see services/audio/pcm_capture_web.dart.
   web: ^1.1.0
-=======
   # Firebase: core init + operational data (Firestore). The web SDK is bundled
   # via these Dart packages — no <script> tags needed in web/index.html.
   firebase_core: ^4.10.0
   cloud_firestore: ^6.5.0
->>>>>>> 6002f27044209f853bc9d87648aba2778b325b45
 
 dev_dependencies:
   flutter_test:

@@ -12,8 +12,12 @@ identifies the customer's problem, searches a seeded company knowledge base, and
 three ranked, source-cited suggested replies** (recommended / more likely / maybe). In parallel it
 watches the customer's text sentiment: if anger crosses a threshold or the customer explicitly asks
 for a manager, it raises a one-time alert and opens a one-tap escalation dialog naming the relevant
-supervisor. It is bilingual (Gulf Arabic and English). The full product specification
-lives in `docs/PRD.md` and is the source of truth; read it before making architectural decisions.
+supervisor. **Issue prediction**: a customer's past issues (`previous_issues`) inform problem
+extraction when relevant. ظل also offers a real-time **text chat** channel between agent and
+customer (no AI assist during chat); when the agent ends a chat, one LLM call summarizes it into a
+stored `previous_issues` record that feeds future call predictions. It is bilingual (Gulf Arabic and
+English). The full product specification lives in `docs/PRD.md` and is the source of truth; read it
+before making architectural decisions.
 
 
 ## Commands
@@ -114,7 +118,7 @@ WebSocket/REST.
 
 ### Firestore Structure
 
-Customers collection at `customers/{customerId}` with fields: `name`(string), `phone_number`(string), `account_number`(string), `language_preference`(string), `recent_issues`(array), `created_at`(timestamp). Mapped by `CustomerModel` with `fromJson()`/`toJson()` handling Timestamp-DateTime conversion.
+Customers collection at `customers/{customerId}` with fields: `name`(string), `phone`(string), `account_number`(string), `language_preference`(string), `created_at`(timestamp). Mapped by `CustomerModel`. **Note:** per the updated PRD, prior issues now live in the separate `previous_issues` collection — the legacy `recent_issues` array on `CustomerModel` is to be removed.
 
 Agents collection at `agents/{agentsId}` with fields: `name`(string), `email`(string), `department`(string), `status`(string), `languages`(array), `created_at`(timestamp). Mapped by `AgentsModel` with `fromJson()`/`toJson()`.
 
@@ -123,6 +127,11 @@ Supervisors collection at `supervisors/{supervisorId}` with fields: `name`(strin
 Calls collection at `calls/{callId}` with fields: `agent_id`(string), `agent_name`(string), `customer_id`(string), `customer_name`(string), `started_at`(timestamp), `ended_at`(timestamp), `duration_sec`(number), `language`(string), `issue_category`(string), `transcript`(array), `anger_alert_fired`(boolean), `anger_peak_score`(number), `suggestion_used`(boolean), `escalated`(boolean), `supervisor_id`(string), `citations`(array), `outcome`(string). Mapped by `CallsModel` with `fromJson()`/`toJson()` handling Timestamp-DateTime conversion.
 
 Escalations collection at `escalations/{escalationId}` with fields: `call_id`(string), `agent_id`(string), `customer_id`(string), `supervisor_id`(string), `reason`(string), `triggered_at`(timestamp), `agent_action`(string), `resolved_at`(timestamp). Mapped by `EscalationModel` with `fromJson()`/`toJson()` handling Timestamp-DateTime conversion.
+
+**New collections (updated PRD — models not yet built):**
+- `previous_issues/{issueId}`: `customer_id`(string), `issue_summary`(string), `category`(string: billing/technical/policy), `resolved`(bool), `source`(string: chat/call), `source_id`(string), `created_at`(timestamp). Prediction context for Pass 1 (rule #8).
+- `chats/{chatId}`: `agent_id`(string), `customer_id`(string), `language`(string), `status`(string: active/ended), `resolved`(bool), `started_at`(timestamp), `ended_at`(timestamp).
+- `messages` subcollection at `chats/{chatId}/messages/{messageId}`: `sender`(string: agent/customer), `text`(string), `sent_at`(timestamp).
 
 
 ### Load-bearing design rules
@@ -138,9 +147,11 @@ These are easy to violate and expensive to retrofit:
    when writing. No `snake_case` identifiers in Dart; no `camelCase` keys in storage.
 
 3. **Two-pass Gemini cycle per Get Answer (Option B).** Each press: **Pass 1** reads the transcript
-   and returns *exactly* `{language, problem_summary, anger_score, escalation_requested}` → embed
-   `problem_summary` (not the raw transcript) with `text-embedding-3-large` → Pinecone top-K (K≈5)
-   retrieval → **Pass 2** reads the retrieved chunks and returns *exactly*
+   (plus the customer's category-pre-matched `previous_issues`, used only if relevant — see rule #8)
+   and returns *exactly* `{problem_summary, anger_score, escalation_requested}` (no `language` — the
+   call language is fixed by the customer's pre-call pick) → embed `problem_summary` (not the raw
+   transcript) with `text-embedding-3-large` → Pinecone top-K (K≈5) retrieval → **Pass 2** reads the
+   retrieved chunks and returns *exactly*
    `{suggested_replies: [{label, answer, confidence, citations:[{document_id, title}]}]}`. Both
    calls are JSON-only — no prose around the JSON. See PRD §11 for the full shapes.
 
@@ -168,12 +179,27 @@ These are easy to violate and expensive to retrofit:
    first `SessionConnected`); Get Answer only requests answers — matching the auto-transcription
    target, ready for the real Deepgram stream.
 
+8. **Issue prediction is strictly additive (FR-7).** Before Pass 1, load the customer's
+   `previous_issues`; a cheap `category` pre-match drops obviously-unrelated ones with no LLM call;
+   surviving issues are passed into Pass 1, which uses them **only if** it judges them relevant
+   (relevance decision lives inside Pass 1 — no extra call). No past issues / none survive / all
+   judged irrelevant → identical outcome: the cycle proceeds on the transcript alone. Prediction's
+   absence must never block suggestions.
+
+9. **Chat has no AI assist; its only LLM use is the end-of-chat summary (FR-8).** Real-time text
+   channel (`chats` + `messages` subcollection), persisted live. Only the **agent** can end a chat;
+   **End Chat** opens a "Problem resolved?" popup. On confirm, one LLM summarization call reads the
+   full history + `resolved` flag and returns *exactly* `{issue_summary, category}` → written as a
+   new `previous_issues` record (`source: chat`, `source_id: chat_id`, `resolved` from the popup),
+   which becomes prediction context (rule #8). Independent of the call's two-pass cycle.
+
 ### Data model
 
 Operational data is in **Firestore** collections (`agents`, `customers`, `supervisors`, `calls`,
-`escalations`); references are stored as plain ID strings and resolved in the backend (no enforced
-foreign keys). Knowledge content is in **Pinecone** as vectors + metadata. Full field definitions
-are in PRD §10 — consult it rather than guessing field names.
+`escalations`, `previous_issues`, `chats` + `messages` subcollection); references are stored as
+plain ID strings and resolved in the backend (no enforced foreign keys). Knowledge content is in
+**Pinecone** as vectors + metadata. Full field definitions are in PRD §10 — consult it rather than
+guessing field names.
 
 ## Project Structure (`lib/`)
 
@@ -244,6 +270,9 @@ lib/
   wired yet (services + seeding are next M0/M1 items).
 - **Firestore access is hybrid** (target): client reads reference data directly (`customers`, `supervisors`);
   all writes (`calls`, `escalations`) go through the backend over the WebSocket. Currently all mocked.
+- **Updated-PRD scope not yet built**: the entry flow becomes role → channel (`Agent → {Call, Chat}`,
+  `Customer → {Call, Chat}`); the **chat** feature (pages, cubits, `chats`/`messages` models, end-of-chat
+  summary) and **issue prediction** (`previous_issues` model + Pass 1 wiring) are new and unimplemented.
 - Naming matches the conventions above — `core/routes/` (not `router/`), `_cubits` suffix on
   feature groups, snake_case folders.
 - Tests: `test/escalation_cubit_test.dart` (one-time fire, rule #6), `test/models_test.dart`

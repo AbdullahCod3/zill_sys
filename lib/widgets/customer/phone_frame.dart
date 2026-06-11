@@ -10,11 +10,31 @@ class PhoneFrame extends StatelessWidget {
 
   const PhoneFrame({super.key, required this.child});
 
+  /// Intrinsic design size of the device chrome. The widget scales uniformly
+  /// down from this to fit short viewports (never up past it).
+  static const double _designW = 360;
+  static const double _designH = 720;
+
   @override
   Widget build(BuildContext context) {
+    // Fit the phone within the visible viewport height, leaving headroom for
+    // the app-shell header and the NOTE callout below it. Scale is capped at
+    // 1.0 so the device never grows beyond its design size on large screens.
+    final screenH = MediaQuery.sizeOf(context).height;
+    final maxH = (screenH - 160).clamp(360.0, _designH);
+    final scale = (maxH / _designH).clamp(0.0, 1.0);
+
+    return SizedBox(
+      width: _designW * scale,
+      height: _designH * scale,
+      child: FittedBox(fit: BoxFit.contain, child: _device()),
+    );
+  }
+
+  Widget _device() {
     return Container(
-      width: 360,
-      height: 720,
+      width: _designW,
+      height: _designH,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.void_,

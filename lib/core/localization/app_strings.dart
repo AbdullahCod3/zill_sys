@@ -33,6 +33,11 @@ class AppStrings {
     'اضغط لبدء مكالمة الدعم',
   );
   static const call = TextPair('Call', 'اتصال');
+  static const phoneNumber = TextPair('Phone number', 'رقم الهاتف');
+  static const phoneNumberHint = TextPair(
+    'Add your phone number',
+    'أضف رقم هاتفك',
+  );
   static const callLanguage = TextPair('Call language', 'لغة المكالمة');
   static const calling = TextPair('CALLING…', 'يتّصل…');
   static const ringing = TextPair('Ringing', 'يرنّ');
@@ -63,6 +68,19 @@ class AppStrings {
   );
   static const customer = TextPair('Customer', 'العميل');
   static const agent = TextPair('Agent', 'الموظف');
+  static const previousIssues = TextPair('Previous issues', 'المشاكل السابقة');
+  // Previous-issues popup: field labels + values (ERD `previous_issues`).
+  static const issueSummary = TextPair('Summary', 'الملخص');
+  static const category = TextPair('Category', 'الفئة');
+  static const status = TextPair('Status', 'الحالة');
+  static const source = TextPair('Source', 'المصدر');
+  static const date = TextPair('Date', 'التاريخ');
+  static const openStatus = TextPair('Open', 'مفتوحة');
+  static const categoryBilling = TextPair('Billing', 'فوترة');
+  static const categoryTechnical = TextPair('Technical', 'تقني');
+  static const categoryPolicy = TextPair('Policy', 'سياسة');
+  static const sourceChat = TextPair('Chat', 'محادثة');
+  static const sourceCall = TextPair('Call', 'مكالمة');
   static const waiting = TextPair('Waiting…', 'بالانتظار…');
   static const waitingForCall = TextPair(
     'Waiting for the call to start…',

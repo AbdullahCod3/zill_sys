@@ -217,6 +217,15 @@ lib/
 - **Suggested replies**: 3 tiered options (`AnswerTier` enum: recommended/likely/maybe). The cockpit's
   "Don't use — re-read the call" button appends an angrier follow-up line and swaps in a second
   suggestion set (`DemoScriptService.analysis(round:)`); rounds cycle. `AnswerLoaded` carries `round`.
+- **Responsive phone**: `PhoneFrame` keeps a fixed 360×720 design but scales uniformly (FittedBox)
+  to fit the viewport height (`MediaQuery`, capped at 1.0) so the call UI never clips on short screens.
+- **Customer phone-number field**: cosmetic `PhoneNumberField` (mock — no validation, not sent) above
+  the `LanguageChoice` on the idle screen; controller owned by `_CustomerBodyState`.
+- **Customer info strip**: agent header is `widgets/call/customer_info_strip.dart` (`CustomerInfoStrip`,
+  was inline `_TopStrip`) — a "Previous issues" chip opens `PreviousIssuesDialog`
+  (`widgets/call/previous_issues_dialog.dart`), a compact popup listing the customer's last issues as
+  labeled rows (mock list shaped like ERD `previous_issues`: summary, category, resolved, source,
+  created_at). Date via `formatShortDate` (`core/utils/time_format.dart`, intl).
 - **Design reference**: the source prototype lives in `docs/design_ref/` (HTML/CSS/JSX). The Zill skin
   (`styles.css`) overrides Slate's serif with **Plus Jakarta Sans** for display+UI — fonts via
   `google_fonts` (Plus Jakarta Sans / JetBrains Mono / Tajawal for AR). Assets in `assets/`.

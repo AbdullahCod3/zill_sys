@@ -21,6 +21,7 @@ import '../../widgets/customer/call_action_button.dart';
 import '../../widgets/customer/call_avatar.dart';
 import '../../widgets/customer/language_choice.dart';
 import '../../widgets/customer/phone_frame.dart';
+import '../../widgets/customer/phone_number_field.dart';
 import '../../widgets/customer/round_call_button.dart';
 
 /// Customer-side phone screen. The customer never sees Shadow (PRD §3).
@@ -62,6 +63,9 @@ class _CustomerBodyState extends State<_CustomerBody> {
   /// used for both sides' transcription (independent of the UI locale).
   String _lang = 'ar';
 
+  /// Cosmetic phone-number input (mock only — not validated or sent).
+  final TextEditingController _phone = TextEditingController();
+
   Future<void> _startUplink() async {
     if (!WebRtcConfig.useRealTranscription || _uplink != null) return;
     final uplink = DeepgramTranscriptSource(
@@ -81,6 +85,7 @@ class _CustomerBodyState extends State<_CustomerBody> {
   @override
   void dispose() {
     _uplink?.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
@@ -185,6 +190,20 @@ class _CustomerBodyState extends State<_CustomerBody> {
               ),
             ),
             const Spacer(),
+            Text(
+              AppStrings.phoneNumber.resolve(context).toUpperCase(),
+              style: AppTextStyles.mono(
+                size: 10,
+                color: Colors.white54,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            PhoneNumberField(
+              controller: _phone,
+              hint: AppStrings.phoneNumberHint.resolve(context),
+            ),
+            const SizedBox(height: 16),
             Text(
               AppStrings.callLanguage.resolve(context).toUpperCase(),
               style: AppTextStyles.mono(

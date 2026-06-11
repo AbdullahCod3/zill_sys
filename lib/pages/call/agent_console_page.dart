@@ -26,6 +26,7 @@ import '../../widgets/app_shell.dart';
 import '../../widgets/call/anger_alert_banner.dart';
 import '../../widgets/call/call_controls.dart';
 import '../../widgets/call/call_summary_card.dart';
+import '../../widgets/call/customer_info_strip.dart';
 import '../../widgets/call/escalation_dialog.dart';
 import '../../widgets/call/get_answer_button.dart';
 import '../../widgets/call/incoming_call_card.dart';
@@ -337,7 +338,10 @@ class _Connected extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _TopStrip(customerName: customerName, seconds: session.seconds),
+          CustomerInfoStrip(
+            customerName: customerName,
+            seconds: session.seconds,
+          ),
           const SizedBox(height: 16),
           Expanded(
             child: LayoutBuilder(
@@ -369,107 +373,6 @@ class _Connected extends StatelessWidget {
                 );
               },
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TopStrip extends StatelessWidget {
-  final String customerName;
-  final int seconds;
-
-  const _TopStrip({required this.customerName, required this.seconds});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    final ar = isArabic(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: colors.bgSurface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colors.borderDefault),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [AppColors.neon, AppColors.neonCyan],
-              ),
-            ),
-            child: const Icon(Icons.person, color: Colors.white),
-          ),
-          const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                customerName,
-                style: AppTextStyles.display(
-                  arabic: ar,
-                  size: 22,
-                  weight: FontWeight.w500,
-                  color: colors.fgPrimary,
-                ),
-              ),
-              Text(
-                'ZL-447-2210 · ${langText(context, 'Fiber Pro 500', 'فايبر برو 500')}',
-                style: AppTextStyles.mono(size: 11, color: colors.fgTertiary),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Flexible(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: AppColors.amber,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: AppColors.amber, blurRadius: 10),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    langText(
-                      context,
-                      'Internet outage + disputed charge',
-                      'انقطاع إنترنت + اعتراض على رسوم',
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.ui(
-                      arabic: ar,
-                      size: 14,
-                      color: colors.fgSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 20),
-          Row(
-            children: [
-              const AudioBars(color: AppColors.neon),
-              const SizedBox(width: 12),
-              Text(
-                formatMmss(seconds),
-                style: AppTextStyles.mono(size: 18, color: colors.fgPrimary),
-              ),
-            ],
           ),
         ],
       ),

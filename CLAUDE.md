@@ -130,7 +130,7 @@ Escalations collection at `escalations/{escalationId}` with fields: `call_id`(st
 
 **New collections (updated PRD — models not yet built):**
 - `previous_issues/{issueId}`: `customer_id`(string), `issue_summary`(string), `category`(string: billing/technical/policy), `resolved`(bool), `source`(string: chat/call), `source_id`(string), `created_at`(timestamp). Prediction context for Pass 1 (rule #8).
-- `chats/{chatId}`: `agent_id`(string), `customer_id`(string), `language`(string), `status`(string: active/ended), `resolved`(bool), `started_at`(timestamp), `ended_at`(timestamp).
+- `chats/{chatId}`: `agent_id`(string), `customer_id`(string), `status`(string: active/ended), `resolved`(bool), `started_at`(timestamp), `ended_at`(timestamp).
 - `messages` subcollection at `chats/{chatId}/messages/{messageId}`: `sender`(string: agent/customer), `text`(string), `sent_at`(timestamp).
 
 
@@ -279,9 +279,19 @@ lib/
   wired yet (services + seeding are next M0/M1 items).
 - **Firestore access is hybrid** (target): client reads reference data directly (`customers`, `supervisors`);
   all writes (`calls`, `escalations`) go through the backend over the WebSocket. Currently all mocked.
-- **Updated-PRD scope not yet built**: the entry flow becomes role → channel (`Agent → {Call, Chat}`,
-  `Customer → {Call, Chat}`); the **chat** feature (pages, cubits, `chats`/`messages` models, end-of-chat
-  summary) and **issue prediction** (`previous_issues` model + Pass 1 wiring) are new and unimplemented.
+- **Chat feature (M11) — built, mocked-or-real**: entry flow is now role → channel chooser →
+  `{Call, Chat}` per role. Routes: `channelChooser`, `agentChat`, `customerChat`. Cubits under
+  `lib/cubits/chat_cubits/`: `AgentChatCubit` (waiting → inChat → endingPrompt → ended) and
+  `CustomerChatCubit` (idle → connecting → inChat → ended); both are sealed-state + mock/real
+  branches. Live transport reuses `/signal` with three new frame types (`chat_hello`,
+  `chat_message`, `chat_end`) — no new backend route. Firestore writes for `chats` + `messages`
+  go through `lib/services/firestore/chat_repository.dart` (the only Firestore touch point for
+  chat). Customer creates the `chats/{chatId}` doc on Connect and broadcasts the id; agent attaches
+  by id. Agent-only **End Chat** opens `ResolveChatDialog` (yes/no) and patches the doc.
+  Models: `chat_message.dart`, `chat_model.dart` (+ `test/chat_models_test.dart`). Widgets under
+  `lib/widgets/chat/` mirror `TranscriptBubble` / `EscalationDialog` styling.
+- **Still M12 (deferred)**: end-of-chat Gemini summary → `previous_issues` write (seam already in
+  `ChatRepository`); `previous_issues` model + Pass 1 wiring (FR-7).
 - Naming matches the conventions above — `core/routes/` (not `router/`), `_cubits` suffix on
   feature groups, snake_case folders.
 - Tests: `test/escalation_cubit_test.dart` (one-time fire, rule #6), `test/models_test.dart`

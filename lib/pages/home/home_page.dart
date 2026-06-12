@@ -78,15 +78,20 @@ class _Left extends StatelessWidget {
                 number: '01',
                 title: AppStrings.imEmployee.resolve(context),
                 accent: AppColors.neon,
-                onTap: () => Navigator.of(context).pushNamed(AppRoutes.call),
+                onTap: () => Navigator.of(context).pushNamed(
+                  AppRoutes.channelChooser,
+                  arguments: const {'role': 'agent'},
+                ),
               ),
               const SizedBox(height: 12),
               RoleCard(
                 number: '02',
                 title: AppStrings.imCustomer.resolve(context),
                 accent: AppColors.neonCyan,
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.customer),
+                onTap: () => Navigator.of(context).pushNamed(
+                  AppRoutes.channelChooser,
+                  arguments: const {'role': 'customer'},
+                ),
               ),
             ],
           ),

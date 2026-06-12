@@ -144,6 +144,67 @@ class AppStrings {
     'تم التحويل. تم إشعار المشرف.',
   );
 
+  // ── Channel chooser ──────────────────────────────────────────────────────
+  static const pickChannel = TextPair('Pick a channel.', 'اختر القناة.');
+  static const channelHintAgent = TextPair(
+    'How will you serve this customer?',
+    'كيف ستخدم هذا العميل؟',
+  );
+  static const channelHintCustomer = TextPair(
+    'How would you like to reach support?',
+    'كيف تريد الوصول للدعم؟',
+  );
+  static const channelCall = TextPair('Call', 'مكالمة');
+  static const channelChat = TextPair('Chat', 'محادثة');
+  static const channelCallSubAgent = TextPair(
+    'Live voice with Shadow assist.',
+    'صوت مباشر مع مساعدة ظل.',
+  );
+  static const channelChatSubAgent = TextPair(
+    'Real-time text. No AI assist.',
+    'نص فوري. بدون مساعدة الذكاء.',
+  );
+  static const channelCallSubCustomer = TextPair(
+    'Talk to a support agent.',
+    'تحدث مع موظف الدعم.',
+  );
+  static const channelChatSubCustomer = TextPair(
+    'Type with a support agent.',
+    'راسل موظف الدعم.',
+  );
+
+  // ── Chat ─────────────────────────────────────────────────────────────────
+  static const chatTitle = TextPair('CHAT · LIVE', 'محادثة · مباشر');
+  static const startChat = TextPair('Start chat', 'بدء المحادثة');
+  static const composeHint = TextPair('Type a message…', 'اكتب رسالة…');
+  static const send = TextPair('Send', 'إرسال');
+  static const endChat = TextPair('End chat', 'إنهاء المحادثة');
+  static const youLabel = TextPair('YOU', 'أنت');
+  static const customerLabelCaps = TextPair('CUSTOMER', 'العميل');
+  static const agentLabelCaps = TextPair('AGENT', 'الموظف');
+  static const waitingForCustomer = TextPair(
+    'Waiting for a customer to start chatting…',
+    'بانتظار عميل لبدء المحادثة…',
+  );
+  static const waitingForAgent = TextPair(
+    'Connecting you with an agent…',
+    'يتم توصيلك بموظف…',
+  );
+  static const chatEnded = TextPair('CHAT ENDED', 'انتهت المحادثة');
+  static const chatAgain = TextPair('New chat', 'محادثة جديدة');
+
+  // ── End-chat dialog ──────────────────────────────────────────────────────
+  static const resolveTitle = TextPair(
+    'Problem resolved?',
+    'هل تم حل المشكلة؟',
+  );
+  static const resolveBody = TextPair(
+    'Mark this chat resolved before it gets archived.',
+    'حدّد ما إذا تم حل المحادثة قبل أرشفتها.',
+  );
+  static const yesResolved = TextPair('Yes, resolved', 'نعم، تم الحل');
+  static const noUnresolved = TextPair('No, unresolved', 'لا، لم يُحل');
+
   // ── Call summary ─────────────────────────────────────────────────────────
   static const callSummary = TextPair('CALL SUMMARY', 'ملخص المكالمة');
   static const duration = TextPair('Duration', 'المدة');

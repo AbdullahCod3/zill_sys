@@ -90,7 +90,7 @@ class CustomerInfoStrip extends StatelessWidget {
                     langText(
                       context,
                       'Internet outage + disputed charge',
-                      'انقطاع إنترنت + اعتراض على رسوم',
+                      'انقطاع إنترنت ',
                     ),
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.ui(

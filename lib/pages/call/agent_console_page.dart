@@ -86,7 +86,7 @@ class _ConsoleBodyState extends State<_ConsoleBody> {
   AudioSource? _source;
   bool _transcriptionStarted = false;
 
-  String get _customerName => langText(context, 'Layla Hassan', 'ليلى حسن');
+  String get _customerName => langText(context, 'Layla Hassan', 'عبدالله خالد');
 
   bool get _arabic => isArabic(context);
 

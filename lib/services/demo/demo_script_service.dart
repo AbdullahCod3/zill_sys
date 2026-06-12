@@ -92,18 +92,18 @@ class DemoScriptService {
       problemSummary: _t(
         arabic,
         'Internet outage since this morning + a disputed premium-plan charge.',
-        'انقطاع إنترنت منذ الصباح + اعتراض على رسوم باقة مميّزة.',
+        'انقطاع إنترنت منذ الصباح ',
       ),
       suggestedAnswer: options.first.text,
       options: options,
       citations: [
         Citation(
           documentId: 'KB-114',
-          title: _t(arabic, 'Outage Credit Policy', 'سياسة تعويض الانقطاع'),
+          title: _t(arabic, 'Outage Credit Policy', 'حالة الشبكة العامة'),
         ),
         Citation(
           documentId: 'KB-203',
-          title: _t(arabic, 'Billing Dispute Flow', 'إجراء اعتراض الفواتير'),
+          title: _t(arabic, 'Billing Dispute Flow', 'حلول الواي فاي'),
         ),
       ],
       angerScore: frustrated ? 8 : 2,
@@ -119,30 +119,30 @@ class DemoScriptService {
       tag: _t(
         arabic,
         'Resolve billing & confirm outage',
-        'حلّ الفاتورة وتأكيد الانقطاع',
+        'التحقق من الكابلات والاتصال',
       ),
       text: _t(
         arabic,
         "I'm sorry for both issues. There's an active outage in your area that should be resolved within two hours — I'll add a credit for the downtime. As for the premium charge, that was auto-applied from a promo that ended last month. I'm reversing it now and the refund will hit your account within 24 hours.",
-        'آسف على المشكلتين. هناك انقطاع نشط في منطقتك وسيتم إصلاحه خلال ساعتين — سأقيّد لك رصيداً للانقطاع. أمّا رسوم الباقة المميّزة فقد فُعّلت تلقائياً بعد عرض ترويجي انتهى الشهر الماضي. أعكس العملية الآن وسيصل الاسترداد إلى حسابك خلال 24 ساعة.',
+        'لاحظنا أن مشكلة الانقطاع سبق أن تكررت لديك خلال الفترة الماضية. نوصي بالتأكد من توصيل كابل الألياف أو كابل الشبكة بإحكام، ثم تجربة الاتصال مباشرة بالمودم باستخدام سلك شبكة إذا كنت تستخدم الواي فاي، وذلك لتحديد ما إذا كانت المشكلة من الشبكة اللاسلكية أو من الخدمة نفسها',
       ),
     ),
     AnswerOption(
       tier: AnswerTier.likely,
-      tag: _t(arabic, 'Acknowledge & confirm outage', 'تأكيد وانقطاع الخدمة'),
+      tag: _t(arabic, 'Acknowledge & confirm outage', 'فحص تغطية الواي فاي'),
       text: _t(
         arabic,
         "I completely understand your frustration, and I'm sorry for the disruption. I'm checking your area now — yes, there's an active fiber outage in your neighborhood, expected to be resolved within the next two hours. I'll apply a service credit to your account right away.",
-        'أتفهّم انزعاجك تماماً، وأعتذر عن هذا الانقطاع. أتحقّق من منطقتك الآن — نعم، هناك انقطاع نشط في شبكة الألياف في حيّك، ومن المتوقّع إصلاحه خلال ساعتين. سأقيّد لك رصيد خدمة الآن.',
+        'قد يكون سبب المشكلة ضعف إشارة الواي فاي أو وجود تداخل من أجهزة إلكترونية قريبة، لذلك ننصح بتجربة الاتصال بالقرب من المودم أو التبديل بين شبكتي 2.4GHz و 5GHz إن كانتا متاحتين.',
       ),
     ),
     AnswerOption(
       tier: AnswerTier.maybe,
-      tag: _t(arabic, 'Goodwill retention offer', 'عرض احتفاظ ودّي'),
+      tag: _t(arabic, 'Goodwill retention offer', 'مراجعة استهلاك الأجهزة'),
       text: _t(
         arabic,
         "I want to make this completely right. Beyond reversing the premium charge, I'd like to apply a 30% discount on your next three bills and personally follow up tomorrow once the outage is resolved to make sure everything is stable. Would that work for you?",
-        'أريد أن أصلح الأمر كلّياً. إضافةً إلى إلغاء رسوم الباقة، أودّ منحك خصم 30٪ على فواتيرك الثلاث القادمة، وسأتابع معك شخصياً غداً للتأكّد من استقرار الاتصال. هل يناسبك ذلك؟',
+        'من المحتمل أن تكون المشكلة مرتبطة بارتفاع استهلاك الشبكة من أحد الأجهزة المتصلة، لذلك يمكنك التحقق من عدد الأجهزة المتصلة حالياً وتجربة فصل الأجهزة غير المستخدمة لمعرفة ما إذا كان الاستقرار يتحسن.',
       ),
     ),
   ];

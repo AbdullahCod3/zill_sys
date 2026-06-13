@@ -58,28 +58,28 @@ class PreviousIssuesDialog extends StatelessWidget {
   static List<_MockIssue> get _issues => [
     _MockIssue(
       summaryEn: 'Billing dispute over premium plan charge',
-      summaryAr: 'اعتراض على رسوم الباقة المميّزة',
-      category: 'billing',
+      summaryAr: 'انقطاع متكرر في شبكة الإنترنت المنزلي',
+      category: 'Technical',
       resolved: true,
       source: 'chat',
       createdAt: DateTime(2026, 4, 3),
     ),
-    _MockIssue(
-      summaryEn: 'Repeated internet outages in the evening',
-      summaryAr: 'انقطاعات متكرّرة للإنترنت مساءً',
-      category: 'technical',
-      resolved: false,
-      source: 'call',
-      createdAt: DateTime(2026, 5, 9),
-    ),
-    _MockIssue(
-      summaryEn: 'SIM replacement request',
-      summaryAr: 'طلب استبدال شريحة',
-      category: 'policy',
-      resolved: true,
-      source: 'chat',
-      createdAt: DateTime(2026, 1, 18),
-    ),
+    // _MockIssue(
+    //   summaryEn: 'Repeated internet outages in the evening',
+    //   summaryAr: 'انقطاعات متكرّرة للإنترنت مساءً',
+    //   category: 'technical',
+    //   resolved: false,
+    //   source: 'call',
+    //   createdAt: DateTime(2026, 5, 9),
+    // ),
+    // _MockIssue(
+    //   summaryEn: 'SIM replacement request',
+    //   summaryAr: 'طلب استبدال شريحة',
+    //   category: 'policy',
+    //   resolved: true,
+    //   source: 'chat',
+    //   createdAt: DateTime(2026, 1, 18),
+    // ),
   ];
 
   @override

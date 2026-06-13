@@ -1,37 +1,42 @@
 import 'package:flutter/material.dart';
 
-/// Slate design-system palette, translated 1:1 from `slate-tokens.css`.
+/// Brand teal palette (الألوان الأساسية + الألوان الثانوية), translated into the
+/// semantic-token shape the rest of the app reads through `context.colors.X`.
 ///
-/// [AppColors] holds the *semantic* tokens that flip between dark and light
-/// themes; the raw palette and the theme-independent neon accents live as
-/// static members. Read the active set via `Theme.of(context).extension`.
+/// [AppColors] holds the semantic tokens that flip between dark and light themes;
+/// the raw palette and the theme-independent brand accents live as static members.
+/// Read the active set via `Theme.of(context).extension`.
 @immutable
 class AppColors extends ThemeExtension<AppColors> {
   // ── Raw palette (theme-independent) ──────────────────────────────────────
-  static const Color void_ = Color(0xFF0A0A0F);
-  static const Color ink = Color(0xFF1C1C27);
-  static const Color smoke = Color(0xFF2E2E3E);
-  static const Color mist = Color(0xFF6B6B82);
-  static const Color fog = Color(0xFFAEAEC0);
-  static const Color cloud = Color(0xFFE8E8F0);
-  static const Color paper = Color(0xFFF7F7FB);
+  // Dark-family surfaces (essential palette: الخلفية الرئيسية / الثانوية).
+  static const Color void_ = Color(0xFF0B1E1C); // الخلفية الرئيسية
+  static const Color ink = Color(0xFF103D38); // الخلفية الثانوية
+  static const Color smoke = Color(0xFF1A4F48); // elevated surface (derived)
+  // Neutral text/border ramp (teal-tinted greys).
+  static const Color mist = Color(0xFF4B6663);
+  static const Color fog = Color(0xFF9BB5B1);
+  static const Color cloud = Color(0xFFDFEEEC);
+  static const Color paper = Color(0xFFF2F8F7);
   static const Color white = Color(0xFFFFFFFF);
 
-  static const Color indigo = Color(0xFF7C6FF7);
-  static const Color indigoLight = Color(0xFFA69CF9);
-  static const Color indigoDark = Color(0xFF5A52D5);
+  // ── Brand accents (same in both themes) ──────────────────────────────────
+  /// `neon` — primary interactive accent (العناصر التفاعلية).
+  static const Color neon = Color(0xFF269D91);
 
-  // ── Neon accents (same in both themes) ───────────────────────────────────
-  /// `--neon` — primary indigo accent.
-  static const Color neon = indigo;
+  /// `neonCyan` — secondary mint accent (النصوص والحدود highlight).
+  static const Color neonCyan = Color(0xFF86D0CB);
 
-  /// `--neon-cyan` — secondary cyan accent (#5EEAD4 / rgba 94,234,212).
-  static const Color neonCyan = Color(0xFF5EEAD4);
+  /// Slightly brighter teal used for hover/active states.
+  static const Color neonHover = Color(0xFF3FB8AB);
 
-  static const Color amber = Color(0xFFF5A623);
-  static const Color amberLight = Color(0xFFFAC55C);
+  /// Pale-cyan informational accent (secondary palette).
+  static const Color infoSoft = Color(0xFFC5E7E8);
+
+  static const Color amber = Color(0xFFF8CB40);
+  static const Color amberLight = Color(0xFFFFD97A);
   static const Color danger = Color(0xFFE85454);
-  static const Color success = Color(0xFF3DC96A);
+  static const Color success = Color(0xFFB7CD34);
 
   // ── Semantic tokens (flip per theme) ─────────────────────────────────────
   final Color bgBase;
@@ -51,7 +56,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color accent;
   final Color accentHover;
 
-  /// Faint grid lines used in card overlays (`--grid-color`).
+  /// Faint grid lines used in card overlays.
   final Color grid;
 
   const AppColors({
@@ -72,37 +77,37 @@ class AppColors extends ThemeExtension<AppColors> {
   });
 
   static const AppColors dark = AppColors(
-    bgBase: ink,
-    bgSurface: void_,
+    bgBase: void_,
+    bgSurface: ink,
     bgElevated: smoke,
-    bgOverlay: Color(0xE01C1C27), // rgba(28,28,39,0.88)
+    bgOverlay: Color(0xE0103D38), // ink at ~0.88
     fgPrimary: white,
-    fgSecondary: fog,
-    fgTertiary: mist,
-    fgDisabled: Color(0xFF4A4A60),
-    borderSubtle: Color(0x12FFFFFF), // white 0.07
-    borderDefault: Color(0x1FFFFFFF), // white 0.12
-    borderStrong: Color(0x3DFFFFFF), // white 0.24
-    accent: indigo,
-    accentHover: indigoLight,
-    grid: Color(0x0F7C6FF7), // indigo 0.06
+    fgSecondary: neonCyan,
+    fgTertiary: fog,
+    fgDisabled: mist,
+    borderSubtle: Color(0x1A86D0CB), // neonCyan 0.10
+    borderDefault: Color(0x3386D0CB), // neonCyan 0.20
+    borderStrong: Color(0x6686D0CB), // neonCyan 0.40
+    accent: neon,
+    accentHover: neonHover,
+    grid: Color(0x14269D91), // neon ~0.08
   );
 
   static const AppColors light = AppColors(
     bgBase: paper,
     bgSurface: white,
     bgElevated: cloud,
-    bgOverlay: Color(0xE6FFFFFF), // rgba(255,255,255,0.9)
+    bgOverlay: Color(0xE6FFFFFF), // white 0.90
     fgPrimary: void_,
-    fgSecondary: Color(0xFF4A4A60),
+    fgSecondary: ink,
     fgTertiary: mist,
     fgDisabled: fog,
     borderSubtle: cloud,
-    borderDefault: Color(0xFFD8D8E8),
-    borderStrong: Color(0xFFB8B8CC),
-    accent: indigoDark,
-    accentHover: indigo,
-    grid: Color(0x0A1C1C27), // ink 0.04
+    borderDefault: infoSoft,
+    borderStrong: neonCyan,
+    accent: Color(0xFF1F857B), // deeper teal for AA contrast on white
+    accentHover: neon,
+    grid: Color(0x14103D38), // ink ~0.08
   );
 
   @override

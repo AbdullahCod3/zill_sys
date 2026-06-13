@@ -26,7 +26,7 @@ class AppStrings {
   );
 
   // ── Customer (phone) ─────────────────────────────────────────────────────
-  static const telcoSupport = TextPair('Telco Support', 'دعم تيلكو');
+  static const telcoSupport = TextPair('Telco Support', 'دعم MyZill');
   static const telcoSupportCaps = TextPair('TELCO SUPPORT', 'دعم تيلكو');
   static const tapToStart = TextPair(
     'Tap to start your support call',
@@ -79,7 +79,7 @@ class AppStrings {
   static const categoryBilling = TextPair('Billing', 'فوترة');
   static const categoryTechnical = TextPair('Technical', 'تقني');
   static const categoryPolicy = TextPair('Policy', 'سياسة');
-  static const sourceChat = TextPair('Chat', 'محادثة');
+  static const sourceChat = TextPair('Chat', 'تطبيق MyZill');
   static const sourceCall = TextPair('Call', 'مكالمة');
   static const waiting = TextPair('Waiting…', 'بالانتظار…');
   static const waitingForCall = TextPair(

@@ -77,7 +77,7 @@ class _Left extends StatelessWidget {
               RoleCard(
                 number: '01',
                 title: AppStrings.imEmployee.resolve(context),
-                accent: AppColors.neon,
+                accent: AppColors.success,
                 onTap: () => Navigator.of(context).pushNamed(
                   AppRoutes.channelChooser,
                   arguments: const {'role': 'agent'},
@@ -87,7 +87,7 @@ class _Left extends StatelessWidget {
               RoleCard(
                 number: '02',
                 title: AppStrings.imCustomer.resolve(context),
-                accent: AppColors.neonCyan,
+                accent: AppColors.amber,
                 onTap: () => Navigator.of(context).pushNamed(
                   AppRoutes.channelChooser,
                   arguments: const {'role': 'customer'},

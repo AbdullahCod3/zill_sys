@@ -49,34 +49,22 @@ class ZillAppBar extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const BrandMark(size: 32),
-                  const SizedBox(width: 14),
-                  Text(
-                    'ظل',
-                    textDirection: TextDirection.rtl,
-                    style: AppTextStyles.ui(
-                      arabic: true,
-                      size: 30,
-                      weight: FontWeight.w700,
-                      color: colors.fgPrimary,
-                      height: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
+                  const BrandMark(size: 56),
+                  const SizedBox(width: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.neon),
+                      border: Border.all(color: AppColors.amber),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       AppStrings.brandTag,
                       style: AppTextStyles.mono(
                         size: 10,
-                        color: AppColors.neon,
+                        color: AppColors.amber,
                         letterSpacing: 0.24 * 10,
                       ),
                     ),

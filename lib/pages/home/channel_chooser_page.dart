@@ -99,7 +99,7 @@ class ChannelChooserPage extends StatelessWidget {
             : AppStrings.channelCallSubCustomer)
         .resolve(context),
     icon: Icons.call,
-    accent: AppColors.neon,
+    accent: AppColors.success,
     onTap: () => Navigator.of(
       context,
     ).pushNamed(isAgent ? AppRoutes.call : AppRoutes.customer),
@@ -113,7 +113,7 @@ class ChannelChooserPage extends StatelessWidget {
             : AppStrings.channelChatSubCustomer)
         .resolve(context),
     icon: Icons.forum_outlined,
-    accent: AppColors.neonCyan,
+    accent: AppColors.amber,
     onTap: () => Navigator.of(
       context,
     ).pushNamed(isAgent ? AppRoutes.agentChat : AppRoutes.customerChat),

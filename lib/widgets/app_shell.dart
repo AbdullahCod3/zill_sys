@@ -19,7 +19,7 @@ class AppShell extends StatelessWidget {
     required this.body,
     this.statusLabel,
     this.showSwitchRole = false,
-    this.showDemoPanel = true,
+    this.showDemoPanel = false,
   });
 
   @override

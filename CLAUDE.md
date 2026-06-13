@@ -209,7 +209,7 @@ Front-end demo is built and runs (`flutter run -d chrome`). Fully mocked — no 
 lib/
 ├── main.dart                       # ZillApp: MultiBlocProvider (theme/locale/demo) + MaterialApp
 ├── core/
-│   ├── constants/                  # app_constants.dart — Slate tokens + anger/debounce/top-K;
+│   ├── constants/                  # app_constants.dart — spacing/radii tokens + anger/debounce/top-K;
 │   │                               #   webrtc_config.dart — useRealCall flag, STUN, signalingUrl()
 │   ├── localization/               # app_strings.dart — EN/AR {en,ar} pairs (UI chrome)
 │   ├── routes/                     # app_routes.dart — AppRoutes constants + onGenerateRoute
@@ -296,6 +296,17 @@ lib/
   feature groups, snake_case folders.
 - Tests: `test/escalation_cubit_test.dart` (one-time fire, rule #6), `test/models_test.dart`
   (snake_case⇄camelCase boundary), `test/widget_test.dart` (boots to Home).
+- **Brand theme** (rebranded from Slate indigo/cyan to brand teal — `lib/core/theme/app_colors.dart`):
+  - Surfaces: `#0B1E1C` (`bgBase` / الخلفية الرئيسية) → `#103D38` (`bgSurface` / الخلفية الثانوية)
+    → `#1A4F48` (`bgElevated`).
+  - Accents: `AppColors.neon = #269D91` (interactive / العناصر التفاعلية), `neonCyan = #86D0CB`
+    (text & borders highlight / النصوص والحدود). Names preserved; only the hex changed, so every
+    `AppColors.neon` / `AppColors.neonCyan` call site repaints automatically.
+  - Status: `success = #B7CD34` (lime), `amber = #F8CB40`, `infoSoft = #C5E7E8`, `danger = #E85454`
+    (unchanged).
+  - Light theme inverted with white/cream surfaces + deeper teal `#1F857B` accent for AA contrast.
+  - App-bar brand mark (`lib/widgets/app_bar/brand_mark.dart`) now reads `assets/images/zill_logo.png`
+    via `Image.asset` (the inline Z-glyph SVG and `flutter_svg` import inside that file were removed).
 
 ## Demo scope
 
